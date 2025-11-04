@@ -1,0 +1,29 @@
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# VS Code & system files
+.vscode/
+.idea/
+.DS_Store
+
+# Logs and temp files
+*.log
+tmp/
+build/
+dist/
+
+# Data (large / sensitive files)
+data/*.csv
+data/*.xlsx
+
+# Ignore exported documents
+*.docx
+*.pdf
+*.png
+
+# OS metadata
+Thumbs.db
