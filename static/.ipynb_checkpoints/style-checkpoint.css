@@ -1,0 +1,148 @@
+/* static/style.css */
+
+/* Load custom fonts */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+
+/* Set up light/dark theme variables */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #091f40;
+  --accent-color: #091f40;
+  --header-bg: #f8f9fa;
+  --font-heading: 'Montserrat', sans-serif;
+  --font-body: 'Segoe UI', sans-serif; /* Replace with Bliss if web-safe or host locally */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #1e1e1e;
+    --text-color: #ffffff;
+    --header-bg: #2a2a2a;
+  }
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-body);
+  margin: 0;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: var(--font-heading);
+  color: var(--accent-color);
+}
+
+.shiny-heading {
+  background-color: var(--header-bg);
+  padding: 20px;
+  text-align: center;
+  border-bottom: 2px solid var(--accent-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.shiny-heading img {
+  height: 50px;
+  margin: 0 20px;
+}
+
+/* ---  Button Style --- */
+.btn {
+  border: none;
+  border-radius: 2px;
+  font-family: "Montserrat", sans-serif;
+  color: black;
+  padding: 0.6em 2em;
+  cursor: pointer;
+  background: #FDD92F;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.5);
+  font-weight: 600;
+  transition: all 0.2s ease-in-out;
+  text-align: center;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.btn img {
+  height: 1em;
+  margin-right: 0.5em;
+  vertical-align: middle;
+}
+
+.btn:hover {
+  background: #e6c621;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+/* Swap logos in dark mode */
+@media (prefers-color-scheme: dark) {
+  .shiny-heading img[src*="PeaceRep_nobg.png"] {
+    content: url("static/logos/PeaceRep_white.png");
+  }
+  .shiny-heading img[src*="Pax_nobg.png"] {
+    content: url("static/logos/Pax_white.png");
+  }
+}
+
+/* Make header sticky */
+.shiny-heading {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* Make sidebar sticky */
+.shiny-layout-sidebar .sidebar {
+  position: sticky;
+  top: 80px; /* Adjust depending on header height */
+  align-self: flex-start;
+  z-index: 999;
+  background-color: var(--bg-color);
+  padding-bottom: 20px;
+  border-right: 1px solid #eee;
+}
+
+/* Ensure main content scrolls smoothly */
+.shiny-layout-sidebar .main {
+  padding: 1.5rem;
+}
+
+/* === Sticky, Collapsible Sidebar === */
+
+.sidebar-wrapper {
+  position: sticky;
+  top: 80px;
+  z-index: 999;
+  background-color: var(--bg-color);
+  border-right: 1px solid #ddd;
+  padding: 1rem;
+  width: 280px;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Collapsed state */
+.sidebar-wrapper.collapsed {
+  transform: translateX(-110%);
+}
+
+/* Hamburger button */
+.hamburger {
+  display: inline-block;
+  cursor: pointer;
+  padding: 10px 20px;
+  font-size: 1.5rem;
+  background-color: var(--bg-color);
+  color: var(--accent-color);
+  border: none;
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+}
+
+@media (min-width: 900px) {
+  .hamburger {
+    display: none; /* hide on large screens */
+  }
+}

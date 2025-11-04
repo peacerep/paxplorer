@@ -1,0 +1,9 @@
+shiny>=1.0
+shinywidgets
+pandas
+numpy
+matplotlib
+plotly
+upsetplot
+python-docx
+gunicorn         
