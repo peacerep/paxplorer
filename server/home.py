@@ -10,13 +10,20 @@ from shiny import reactive, render, ui
 from utils.export_handlers import make_png_download, make_csv_download
 import matplotlib.font_manager as fm
 
+from utils.data_loader import load_pax_data
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+data = load_pax_data()
+pax = data["pax"]
+pax_id_to_con = data["pax_id_to_con"]
+pax_topics = data["pax_topics"]
+
+
+#DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
 # Load data
-pax = pd.read_csv(DATA_DIR / "pax.csv")
-pax_id_to_con = pd.read_csv(DATA_DIR / "pax_id_to_con_info.csv")
-pax_topics = pd.read_csv(DATA_DIR / "all_pax_topics_no_imp.csv")
+# pax = pd.read_csv(DATA_DIR / "pax.csv")
+# pax_id_to_con = pd.read_csv(DATA_DIR / "pax_id_to_con_info.csv")
+# pax_topics = pd.read_csv(DATA_DIR / "all_pax_topics_no_imp.csv")
 
 # Define stage order
 stage_order = [

@@ -20,6 +20,15 @@ from utils.png_export_utils import (
     LOGO_POSITIONS
 )
 
+from utils.data_loader import load_pax_data
+
+# alias to match old export_with_branding argument
+def load_data():
+    """Compatibility wrapper for exports after migrating to load_pax_data()."""
+    return load_pax_data()
+
+
+
 DATA_DIR = "data"
 LOGO_PATH = "static/logos/Pax.png"
 
@@ -204,24 +213,26 @@ def server(input, output, session):
     # DATA LOADING - Load once and cache
     # =========================================================================
     
-    @reactive.calc
-    # Load once, outside reactive context
-    def load_data():
-        """Load all data once (non-reactive)."""
-        if not hasattr(load_data, "_cache"):
-            pax = pd.read_csv("data/pax.csv")
-            pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
-            pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
-            signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv")
+    # @reactive.calc
+    # # Load once, outside reactive context
+    # def load_data():
+    #     """Load all data once (non-reactive)."""
+    #     if not hasattr(load_data, "_cache"):
+    #         pax = pd.read_csv("data/pax.csv")
+    #         pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
+    #         pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
+    #         signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv")
 
-            pax["date"] = pd.to_datetime(pax["Dat"], errors="coerce")
-            load_data._cache = {
-                "pax": pax,
-                "pax_id_to_con": pax_id_to_con,
-                "pax_topics": pax_topics,
-                "signatories": signatories,
-            }
-        return load_data._cache
+    #         pax["date"] = pd.to_datetime(pax["Dat"], errors="coerce")
+    #         load_data._cache = {
+    #             "pax": pax,
+    #             "pax_id_to_con": pax_id_to_con,
+    #             "pax_topics": pax_topics,
+    #             "signatories": signatories,
+    #         }
+    #     return load_data._cache
+
+    #HERE
 
     
     # =========================================================================
@@ -231,25 +242,25 @@ def server(input, output, session):
     @reactive.calc
     def peace_process_choices():
         """Get available peace processes"""
-        data = load_data()
+        data = load_pax_data()
         return sorted(data["pax"]["PPName"].dropna().unique().tolist())
     
     @reactive.calc  
     def pp_agt_type_choices():
         """Get available agreement types"""
-        data = load_data()
+        data = load_pax_data()
         return sorted(data["pax"]["agt_type"].dropna().unique().tolist())
     
     @reactive.calc
     def pp_stage_choices():
         """Get available stages"""
-        data = load_data()
+        data = load_pax_data()
         return sorted(data["pax"]["stage_label"].dropna().unique().tolist())
     
     @reactive.calc
     def pp_year_range():
         """Get min and max years in dataset"""
-        data = load_data()
+        data = load_pax_data()
         min_year = int(data["pax"]["year"].min())
         max_year = int(data["pax"]["year"].max())
         return [min_year, max_year]
@@ -257,8 +268,8 @@ def server(input, output, session):
     @reactive.calc
     def pp_date_range():
         """Get min and max dates in dataset"""
-        data = load_data()
-        dates = pd.to_datetime(data["pax"]["Dat"], errors='coerce').dropna()
+        data = load_pax_data()
+        dates = pd.to_datetime(data["pax"]["Dat"], errors='coerce', dayfirst=True).dropna()
         if dates.empty:
             return [None, None]
         return [dates.min().date(), dates.max().date()]
@@ -292,7 +303,7 @@ def server(input, output, session):
     @reactive.calc
     def base_pp_data():
         """Filter only by selected peace process (primary filter)."""
-        data = load_data()
+        data = load_pax_data()
         df = data["pax"]
 
         selected_pp = input.selected_peace_process()
@@ -307,7 +318,7 @@ def server(input, output, session):
     @reactive.calc
     def filtered_pp_data():
         """Apply all selected filters to the data"""
-        data = load_data()
+        data = load_pax_data()
         df = base_pp_data()  # start from peace-process–filtered data
         if df.empty:
             return {"pax": df, "pax_id_to_con": data["pax_id_to_con"], "pax_topics": pd.DataFrame(), "signatories": pd.DataFrame()}
@@ -332,7 +343,7 @@ def server(input, output, session):
         # Filter by date range
         date_range_vals = input.pp_date_range()
         if date_range_vals and len(date_range_vals) == 2 and date_range_vals[0] and date_range_vals[1]:
-            df['date'] = pd.to_datetime(df['Dat'], errors='coerce')
+            df['date'] = pd.to_datetime(df['Dat'], errors='coerce', dayfirst=True)
             start_date = pd.to_datetime(date_range_vals[0])
             end_date = pd.to_datetime(date_range_vals[1])
             df = df[(df['date'] >= start_date) & (df['date'] <= end_date)]
@@ -478,7 +489,7 @@ def server(input, output, session):
     @render.ui
     def pp_filter_summary():
         """Display filter summary statistics"""
-        data = load_data()
+        data = load_pax_data()
         total_agreements = data["pax"]["AgtId"].nunique()
         
         filtered_data_result = filtered_pp_data()
@@ -542,7 +553,7 @@ def server(input, output, session):
         num_agreements = df["AgtId"].nunique()
         
         # Get date range
-        dates = pd.to_datetime(df['Dat'], errors='coerce').dropna()
+        dates = pd.to_datetime(df['Dat'], errors='coerce', dayfirst=True).dropna()
         if not dates.empty:
             first_date = dates.min().strftime('%d-%m-%Y')
             last_date = dates.max().strftime('%d-%m-%Y')
@@ -552,14 +563,14 @@ def server(input, output, session):
         
         return ui.div(
             ui.div(
-                ui.tags.img(src="/logos/agreements_icon.png", 
-                          style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"),
+               # ui.tags.img(src="static/logos/agreements_icon.png", 
+                #          style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;"),
                 f"{num_agreements} agreements", 
                 style="font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; justify-content: center;"
             ),
             ui.div(
-                ui.tags.img(src="/logos/calendar.png", 
-                          style="width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"),
+                #ui.tags.img(src="static/logos/calendar.png", 
+                          #style="width: 18px; height: 18px; margin-right: 8px; vertical-align: middle;"),
                 f"{date_range}", 
                 style="font-size: 0.9em; color: #666; display: flex; align-items: center; justify-content: center;"
             ),
@@ -574,7 +585,7 @@ def server(input, output, session):
         if not selected_pp:
             return ui.div()
         
-        data = load_data()
+        data = load_pax_data()
         matching_rows = data["pax"][data["pax"]["PPName"] == selected_pp]
         if matching_rows.empty:
             return ui.div()
@@ -588,8 +599,7 @@ def server(input, output, session):
         
         return ui.div(
             ui.tags.a(
-                ui.tags.img(src="/logos/Pax_white.png", 
-                          style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle;"),
+                #ui.tags.img(src="static/logos/Pax_white.png", style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle;"),
                 "View Agreements on PA-X",
                 href=search_url,
                 target="_blank",
@@ -608,7 +618,7 @@ def server(input, output, session):
             return ui.div("Please select a peace process to view the visualization.")
         
         # Get the PP value for the selected PPName
-        data = load_data()
+        data = load_pax_data()
         if data is None:
             return ui.div("Data not available.")
         
@@ -641,7 +651,7 @@ def server(input, output, session):
             return pd.DataFrame()
         
         # Convert date to datetime
-        df['date'] = pd.to_datetime(df['Dat'], errors='coerce')
+        df['date'] = pd.to_datetime(df['Dat'], errors='coerce', dayfirst=True)
         df = df.dropna(subset=['date'])
         
         granularity = input.pp_time_granularity()
@@ -755,7 +765,7 @@ def server(input, output, session):
     def pp_stage_analysis_data():
         data = filtered_pp_data()
         df = data["pax"]
-        all_data = load_data()
+        all_data = load_pax_data()
         
         if df.empty or all_data is None:
             return pd.DataFrame()
@@ -1437,7 +1447,7 @@ def server(input, output, session):
 
         # Sort agreements by date
         pax_sorted = pax_df.copy()
-        pax_sorted["date"] = pd.to_datetime(pax_sorted["Dat"], errors="coerce")
+        pax_sorted["date"] = pd.to_datetime(pax_sorted["Dat"], errors="coerce", dayfirst=True)
         pax_sorted = pax_sorted.dropna(subset=["date"]).sort_values("date")
 
         agreements = pax_sorted[["AgtId", "Agt", "date", "stage_label"]].to_dict("records")
@@ -1600,7 +1610,7 @@ def server(input, output, session):
 
             topics_df = pd.DataFrame(topics_data)
             topic_first_appearance = (
-                topics_df.groupby("topic_label")["date"].min().sort_values(ascending=False)
+                topics_df.groupby("topic_label")["date"].min().sort_values(ascending=True)
             )
             sorted_topics = topic_first_appearance.index.tolist()
 
@@ -1626,7 +1636,20 @@ def server(input, output, session):
                 ]
                 y_positions = [i] * len(x_positions)
                 unique_categories = list(set(topic_categories))
-                category_colors = plt.cm.Set3(np.linspace(0, 1, len(unique_categories)))
+                # --- Define color-blind friendly palette (Okabe–Ito) ---
+                okabe_ito_colors = [
+                    "#E69F00",  # orange
+                    "#56B4E9",  # sky blue
+                    "#009E73",  # bluish green
+                    "#F0E442",  # yellow
+                    "#0072B2",  # blue
+                    "#D55E00",  # vermilion
+                    "#CC79A7",  # reddish purple
+                    "#999999",  # grey (optional extra)
+                ]
+
+                # Cycle or repeat if more categories than colors
+                category_colors = [okabe_ito_colors[i % len(okabe_ito_colors)] for i in range(len(unique_categories))]
                 color_map = dict(zip(unique_categories, category_colors))
                 color = color_map[topic_category]
                 if x_positions:
@@ -1707,6 +1730,10 @@ def server(input, output, session):
 
         
         ax.grid(alpha=0.2)
+        # === Add padding to x-axis for better spacing ===
+        xmin, xmax = ax.get_xlim()
+        x_padding = (xmax - xmin) * 0.02  # 2% of range as padding
+        ax.set_xlim(xmin - x_padding, xmax + x_padding)
         plt.tight_layout()
         return fig
 
@@ -1858,7 +1885,8 @@ def server(input, output, session):
             data_version_fn=get_data_version,
             load_data_fn=load_data,
             logo_position=(0.98, 0.98, 0.075, 0.075),
-            filter_text_position=(0.5, 0.99),
+            filter_text_position=(0.5, 1.02),
+            version_position=(0.98, 0.015),
         )
         
     @output
@@ -1869,8 +1897,9 @@ def server(input, output, session):
             filter_text_fn=get_filter_text_for_png,
             data_version_fn=get_data_version,
             load_data_fn=load_data,
-            filter_text_position=(0.5, 0.99),
+            filter_text_position=(0.5, 1.02),
             logo_position=(0.98, 0.98, 0.075, 0.075),
+            version_position=(0.98, 0.015),
         )
         
 
@@ -2004,6 +2033,7 @@ def server(input, output, session):
             data_version_fn=get_data_version,
             load_data_fn=load_data,
             filter_text_position=(0.1, 0.0035),
+            version_position=(0.99, 0.0035),
         )
 
     @output

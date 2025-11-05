@@ -23,14 +23,23 @@ from utils.png_export_utils import export_with_branding, get_data_version, LOGO_
 # ---------------------------------------------------------------------
 # CONSTANTS & DATA
 # ---------------------------------------------------------------------
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# # Data
+# pax = pd.read_csv("data/pax.csv")
+# con_ent = pd.read_csv("data/country_entity_geo_v9.csv")
+# signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv").rename(columns={'stage_process':'stage_label'})
+# pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
+# pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
 
-# Data
-pax = pd.read_csv("data/pax.csv")
-con_ent = pd.read_csv("data/country_entity_geo_v9.csv")
-signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv").rename(columns={'stage_process':'stage_label'})
-pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
-pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
+from utils.data_loader import load_pax_data
+
+data = load_pax_data()
+pax = data["pax"]
+pax_topics = data["pax_topics"]
+pax_id_to_con = data["pax_id_to_con"]
+con_ent = data["con_ent"]
+signatories = data["signatories"].rename(columns={'stage_process': 'stage_label'})
+
 
 # Stage & type color maps
 stage_order = [
@@ -113,7 +122,7 @@ def server(input, output, session):
         """One-line filter summary for PNG exports."""
         bits = []
 
-        # Actor name(s)
+        # --- Explicitly selected actor names ---
         names = input.actors_selected() or []
         if isinstance(names, str):
             names = [names]
@@ -123,7 +132,7 @@ def server(input, output, session):
                 show.append(f"+ {len(names)-3} more")
             bits.append("Actors: " + " | ".join(show))
 
-        # Type combos
+        # --- Type/subtype combos ---
         combos = input.actors_type_combo() or []
         if isinstance(combos, str):
             combos = [combos]
@@ -133,20 +142,49 @@ def server(input, output, session):
                 show.append(f"+ {len(combos)-3} more")
             bits.append("Actor type: " + " | ".join(show))
 
-        # Flags
-        # flags = input.actors_flags() or []
-        # pretty = {
-        #     "international": "International",
-        #     "regional": "Regional",
-        #     "women": "Women"
-        # }
-        # if flags:
-        #     bits.append("Flags: " + ", ".join(pretty[f] for f in flags if f in pretty))
-        
+                # --- Actor Type selections ---
+        selected_combos = input.actors_type_combo() or []
+        if selected_combos:
+            matching_actors_type = []
+            for combo in selected_combos:
+                combo = combo.strip()
+                if ">" in combo:
+                    main_type, rest = [p.strip() for p in combo.split(">", 1)]
+                    subs = [p.strip() for p in rest.split("/") if p.strip()]
+                else:
+                    main_type = combo.strip()
+                    subs = []
+
+                cond = signatories["actor_type"] == main_type
+                if subs:
+                    cond &= signatories["sub_type"].isin(subs) | signatories["cs_type"].isin(subs)
+
+                matching_actors_type.extend(signatories.loc[cond, "actor_name"].dropna().unique().tolist())
+
+            matching_actors_type = sorted(set(matching_actors_type))
+            if matching_actors_type:
+                count_text = f" ({len(matching_actors_type)} actor{'s' if len(matching_actors_type) != 1 else ''})"
+                bits.append(f"Actor Type: {', '.join(selected_combos)}{count_text}")
+
+
+        # --- UN Type selections ---
+        selected_un_types = input.actors_un_type() or []
+        if selected_un_types:
+            matching_actors = (
+                signatories[signatories["un_type"].isin(selected_un_types)]["actor_name"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+            if matching_actors:
+                count_text = f" ({len(matching_actors)} actor{'s' if len(matching_actors) != 1 else ''})"
+                bits.append(f"Actors: {', '.join(selected_un_types)}{count_text}")
+
+        # --- Third-party only ---
         if input.actors_third_party_only():
             bits.append("Only showing third-party signatories")
 
-        # General filters
+        # --- General agreement filters ---
         reg = input.actors_region() or []
         cty = input.actors_country() or []
         pp = input.actors_peace_process() or []
@@ -160,6 +198,7 @@ def server(input, output, session):
         if yrs and len(yrs) == 2: bits.append(f"Years: {yrs[0]}–{yrs[1]}")
 
         return " | ".join(bits) if bits else "No filters applied"
+
 
     # -------------------------------------------------------
     #  ACTOR SELECTION LOGIC (MULTI + HIERARCHY)
@@ -231,17 +270,23 @@ def server(input, output, session):
         if combos:
             mask = pd.Series(False, index=df.index)
             for combo in combos:
-                parts = [p.strip() for p in combo.split(">")]
-                main_type = parts[0]
-                sub_or_cs = parts[1] if len(parts) > 1 else None
+                # ✅ handle hierarchy: "Main > Sub / CS"
+                combo = combo.strip()
+                if ">" in combo:
+                    main_type, rest = [p.strip() for p in combo.split(">", 1)]
+                    subs = [p.strip() for p in rest.split("/") if p.strip()]
+                else:
+                    main_type = combo.strip()
+                    subs = []
 
                 cond = df["actor_type"] == main_type
-                if sub_or_cs:
-                    cond &= (df["sub_type"] == sub_or_cs) | (df["cs_type"] == sub_or_cs)
+                if subs:
+                    cond &= df["sub_type"].isin(subs) | df["cs_type"].isin(subs)
                 mask |= cond
             df = df[mask]
 
         return df
+
 
     @reactive.effect
     def update_actor_name_choices():
@@ -340,6 +385,12 @@ def server(input, output, session):
         if input.actors_third_party_only():
             sig = sig[sig["practical_third"].fillna(0).astype(int) == 1]
 
+        # --- UN Type filter (moved here to align with actor-based logic) ---
+        selected_un_types = input.actors_un_type() or []
+        if selected_un_types:
+            sig = sig[sig["un_type"].isin(selected_un_types)]
+
+
         # Type/sub/CS combos (multi)
         combos = input.actors_type_combo() or []
         if isinstance(combos, str):
@@ -347,12 +398,18 @@ def server(input, output, session):
         if combos:
             mask = pd.Series(False, index=sig.index)
             for combo in combos:
-                parts = [p.strip() for p in combo.split(">")]
-                main_type = parts[0]
-                sub_or_cs = parts[1] if len(parts) > 1 else None
+                # handle hierarchy: "Main > Sub / CS"
+                combo = combo.strip()
+                if ">" in combo:
+                    main_type, rest = [p.strip() for p in combo.split(">", 1)]
+                    subs = [p.strip() for p in rest.split("/") if p.strip()]
+                else:
+                    main_type = combo.strip()
+                    subs = []
+
                 cond = sig["actor_type"] == main_type
-                if sub_or_cs:
-                    cond &= (sig["sub_type"] == sub_or_cs) | (sig["cs_type"] == sub_or_cs)
+                if subs:
+                    cond &= sig["sub_type"].isin(subs) | sig["cs_type"].isin(subs)
                 mask |= cond
             sig = sig[mask]
 
@@ -379,10 +436,12 @@ def server(input, output, session):
     @reactive.effect
     @reactive.event(input.reset_actors)
     def reset_actor_filters():
-        ui.update_selectize("actors_type_combo", selected=None, session=session)
-        ui.update_selectize("actors_selected", selected=None, session=session)
+        ui.update_selectize("actors_type_combo", selected=[], session=session)
+        ui.update_selectize("actors_selected", selected=[], session=session)
         ui.update_checkbox_group("actors_flags", selected=[], session=session)
         ui.update_checkbox("actors_third_party_only", value=False, session=session)
+        ui.update_checkbox_group("actors_un_type", selected=[], session=session)
+
 
     @reactive.effect
     @reactive.event(input.reset_agreement_filters)
@@ -412,6 +471,59 @@ def server(input, output, session):
         # agreements that pass current filters (actor + general)
         df = filtered_agreements()
         sel_count = df["AgtId"].nunique() if not df.empty else 0
+
+        # --- UN Type selections overview ---
+        selected_un_types = input.actors_un_type() or []
+        un_type_actors_text = None
+
+        if selected_un_types:
+            # Get all unique actor_names from signatories matching selected UN types
+            matching_actors = (
+                signatories[signatories["un_type"].isin(selected_un_types)]["actor_name"]
+                .dropna()
+                .unique()
+                .tolist()
+            )
+            if matching_actors:
+                count_text = f" ({len(matching_actors)} in total)"
+                un_type_actors_text = (
+                    f"Actors included under '{', '.join(selected_un_types)}' {count_text}: "
+                    + ", ".join(sorted(matching_actors))
+                )
+            else:
+                un_type_actors_text = f"No actors found for selected UN Type(s): {', '.join(selected_un_types)}"
+        
+        # --- Actor Type selections overview ---
+        selected_combos = input.actors_type_combo() or []
+        actor_type_text = None
+
+        if selected_combos:
+            matching_actors_type = []
+            for combo in selected_combos:
+                combo = combo.strip()
+                if ">" in combo:
+                    main_type, rest = [p.strip() for p in combo.split(">", 1)]
+                    subs = [p.strip() for p in rest.split("/") if p.strip()]
+                else:
+                    main_type = combo.strip()
+                    subs = []
+
+                cond = signatories["actor_type"] == main_type
+                if subs:
+                    cond &= signatories["sub_type"].isin(subs) | signatories["cs_type"].isin(subs)
+
+                matching_actors_type.extend(signatories.loc[cond, "actor_name"].dropna().unique().tolist())
+
+            matching_actors_type = sorted(set(matching_actors_type))
+            if matching_actors_type:
+                count_text = f" ({len(matching_actors_type)} in total)"
+                actor_type_text = (
+                    f"Actors included under '{', '.join(selected_combos)}'{count_text}: "
+                    + ", ".join(matching_actors_type[:8])
+                    + (f" + {len(matching_actors_type)-8} more" if len(matching_actors_type) > 8 else "")
+                )
+
+
 
         # DENOMINATOR: unique agreements that *have signatories* (signatories universe)
         #total_signed_universe = signatories["AgtId"].dropna().nunique()
@@ -461,15 +573,20 @@ def server(input, output, session):
             if combos:
                 mask = pd.Series(False, index=sig.index)
                 for combo in combos:
-                    parts = [p.strip() for p in combo.split(">")]
-                    main_type = parts[0]
-                    sub_or_cs = parts[1] if len(parts) > 1 else None
+                    combo = combo.strip()
+                    if ">" in combo:
+                        main_type, rest = [p.strip() for p in combo.split(">", 1)]
+                        subs = [p.strip() for p in rest.split("/") if p.strip()]
+                    else:
+                        main_type = combo.strip()
+                        subs = []
+
                     cond = sig["actor_type"] == main_type
-                    if sub_or_cs:
-                        # match either sub_type or cs_type
-                        cond &= (sig["sub_type"] == sub_or_cs) | (sig["cs_type"] == sub_or_cs)
+                    if subs:
+                        cond &= sig["sub_type"].isin(subs) | sig["cs_type"].isin(subs)
                     mask |= cond
                 sig = sig[mask]
+
 
             n_selected_actors = sig["actor_name"].nunique()
 
@@ -497,7 +614,21 @@ def server(input, output, session):
                 selected_flags_text,
                 style="margin-bottom:6px; font-size:0.95em; color:#495057;"
             ),
-            # line 3: agreements summary
+              # line 3: UN Type selections (if any)
+            (ui.div(
+                ui.tags.strong("UN Type selection: ", style="color:#091f40;"),
+                un_type_actors_text,
+                style="margin-bottom:6px; font-size:0.9em; color:#495057;"
+            ) if un_type_actors_text else None),
+
+            # line 4: Actor Type selections (if any)
+            (ui.div(
+                ui.tags.strong("Actor Type selection: ", style="color:#091f40;"),
+                actor_type_text,
+                style="margin-bottom:6px; font-size:0.9em; color:#495057;"
+            ) if actor_type_text else None),
+
+            # line 5: agreements summary
             ui.div(
                 ui.tags.strong(f"{sel_count:,} agreements", style="color:#df1f36;"),
                 f" ({pct:.1f}% of all signed agreements)",
@@ -1132,7 +1263,7 @@ def server(input, output, session):
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
             logo_position=ACTORS_LOGO_POSITION,
-            filter_text_position=(0.5, 0.985),
+            filter_text_position=(0.5, 0.99),
             version_position=ACTORS_VERSION_POSITION,
         )
 
@@ -1175,7 +1306,7 @@ def server(input, output, session):
             filter_text_fn=get_actor_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
-            logo_position=ACTORS_LOGO_POSITION,
+            logo_position=(1, 1, 0.075, 0.075),
             filter_text_position=(0.2, 1),
             version_position=ACTORS_VERSION_POSITION,
         )
@@ -1193,7 +1324,7 @@ def server(input, output, session):
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
             logo_position=ACTORS_LOGO_POSITION,
-            filter_text_position=ACTORS_FILTER_TEXT_POSITION,
+            filter_text_position=(0.1, 0.0035),
             version_position=ACTORS_VERSION_POSITION,
         )
 
@@ -1205,7 +1336,7 @@ def server(input, output, session):
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
             logo_position=ACTORS_LOGO_POSITION,
-            filter_text_position=ACTORS_FILTER_TEXT_POSITION,
+            filter_text_position=(0.1, 0.0035),
             version_position=ACTORS_VERSION_POSITION,
         )
 

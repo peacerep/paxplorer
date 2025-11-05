@@ -13,19 +13,29 @@ from utils.png_export_utils import export_with_branding, get_data_version, LOGO_
 # ---------------------------------------------------------------------
 # CONSTANTS & CONFIG
 # ---------------------------------------------------------------------
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 
-# Data
-pax = pd.read_csv("data/pax.csv")
-pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
-pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
-con_ent = pd.read_csv("data/country_entity_geo_v9.csv")
+from utils.data_loader import load_pax_data
 
-try:
-    signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv")
-except FileNotFoundError:
-    print("Signatory file missing — actor charts will be limited.")
-    signatories = pd.DataFrame()
+data = load_pax_data()
+pax = data["pax"]
+pax_topics = data["pax_topics"]
+pax_id_to_con = data["pax_id_to_con"]
+con_ent = data["con_ent"]
+signatories = data["signatories"]
+
+# DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+# # Data
+# pax = pd.read_csv("data/pax.csv")
+# pax_topics = pd.read_csv("data/all_pax_topics_no_imp.csv")
+# pax_id_to_con = pd.read_csv("data/pax_id_to_con_info.csv")
+# con_ent = pd.read_csv("data/country_entity_geo_v9.csv")
+
+# try:
+#     signatories = pd.read_csv("data/paax_signatory_v0.2_internal.csv")
+# except FileNotFoundError:
+#     print("Signatory file missing — actor charts will be limited.")
+#     signatories = pd.DataFrame()
 
 # Colors
 stage_order = [
@@ -514,7 +524,7 @@ def server(input, output, session):
 
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel(y_title, fontsize=12)
-        ax.set_title("Agreements with Selected Topics Over Time", fontsize=16, fontweight="bold", pad=20, y=1.15)
+        ax.set_title("Agreements with Selected Topics Over Time", fontsize=16, fontweight="bold", pad=20, y=1.01)
         ax.grid(alpha=0.3)
         plt.ylim(0, y_values.max() * 1.15)
         plt.tight_layout()
@@ -854,8 +864,8 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
-            logo_position=TOPICS_LOGO_POSITION,
-            filter_text_position=TOPICS_FILTER_TEXT_POSITION,
+            logo_position=(0.98, 0.98, 0.075, 0.075),
+            filter_text_position=(0.5, 0.0035),
             version_position=TOPICS_VERSION_POSITION,
         )
 
@@ -866,6 +876,8 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
+            logo_position=(0.96, 0.96, 0.075, 0.075), #HERE
+            filter_text_position=(0.5, 0.0035),
         )
 
     @render.download(filename="topics_stage.png")
@@ -875,6 +887,7 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
+            filter_text_position=(0.5, 0.0035),
         )
 
     @render.download(filename="topics_peace_process.png")
@@ -884,6 +897,10 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
+            logo_position=(1.01, 1.01, 0.075, 0.075),
+            filter_text_position = (0.5, 0.004),
+            version_position=(1, 0.015),
+
         )
 
     # @render.download(filename="topics_actors.png")
@@ -902,6 +919,8 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
+            logo_position=(1, 1, 0.075, 0.075),
+            filter_text_position = (0.5, 0.004)
         )
 
     @render.download(filename="topics_third_actors.png")
@@ -911,6 +930,8 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
+            logo_position=(1, 1, 0.075, 0.075),
+            filter_text_position = (0.5, 0.004)
         )
 
     # CSVs (unchanged)

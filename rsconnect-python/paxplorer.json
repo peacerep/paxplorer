@@ -1,0 +1,12 @@
+{
+    "https://api.shinyapps.io": {
+        "server_url": "https://api.shinyapps.io",
+        "filename": "C:\\Users\\nhenry2\\OneDrive - University of Edinburgh\\paxplorer",
+        "app_url": "https://peacerep.shinyapps.io/paxplorer/",
+        "app_id": "15958997",
+        "app_guid": null,
+        "title": "paxplorer",
+        "app_mode": "python-shiny",
+        "app_store_version": 1
+    }
+}

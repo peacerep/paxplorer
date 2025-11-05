@@ -122,7 +122,7 @@ layout = ui.nav_panel(
                     style="align-items: end; margin-bottom: 10px;",
                 ),
 
-                # === Actor attribute checkboxes (single line) ===
+                # === Actor attribute and UN Type checkboxes (both single line) ===
                 ui.row(
                     ui.column(
                         6,
@@ -154,6 +154,26 @@ layout = ui.nav_panel(
                         ),
                     ),
                 ),
+                ui.row(
+                    ui.column(
+                        12,
+                        ui.div(
+                            ui.h5("UN Type:", style="margin-bottom: 6px;"),
+                            ui.input_checkbox_group(
+                                "actors_un_type",
+                                None,
+                                choices={
+                                    "United Nations": "United Nations",
+                                    "UN Mission": "UN Mission",
+                                    "P5": "P5",
+                                },
+                                selected=[],
+                                inline=True,
+                            ),
+                        ),
+                    ),
+                ),
+
 
                 # === Summary card and reset button (aligned bottom-right) ===
                 ui.div(
