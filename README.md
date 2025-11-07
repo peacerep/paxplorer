@@ -21,6 +21,9 @@ pip install -r requirements.txt
 3. Run app locally
 shiny run app.py --reload
 
+## Deployment - log in credentials and then run:
+rsconnect deploy shiny "." --name peacerep --title paxplorer
+
 ### Libraries in use
 Shiny for Python
 pandas

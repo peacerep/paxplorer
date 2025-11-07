@@ -703,6 +703,7 @@ def server(input, output, session):
                         ha="left", va="center", fontsize=9)
             n = input.topics_top_processes() or 20
             ax.set_xlabel("Number of Agreements")
+            ax.set_ylabel("Peace Process")
             ax.set_title(
                 f"Peace Processes with Selected Topics (Top {int(n)})",
                 fontsize=16,
@@ -729,7 +730,8 @@ def server(input, output, session):
             ncol = min(4, len(stage_pivot.columns))
             ax.legend(title="Stage", bbox_to_anchor=(0.5, 1), loc="lower center", ncol=ncol, frameon=False)
             ax.set_xlabel("Number of Agreements")
-            ax.set_title("Peace Processes by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.05)
+            ax.set_ylabel("Peace Process")
+            ax.set_title("Peace Processes by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.09)
 
         plt.tight_layout()
         return fig
@@ -897,8 +899,8 @@ def server(input, output, session):
             filter_text_fn=get_topics_filter_text,
             data_version_fn=get_data_version,
             load_data_fn=lambda: {"pax": pax},
-            logo_position=(1.01, 1.01, 0.075, 0.075),
-            filter_text_position = (0.5, 0.004),
+            logo_position=(1, 1, 0.075, 0.075),
+            filter_text_position = (0.5, 0.0035),
             version_position=(1, 0.015),
 
         )

@@ -87,7 +87,9 @@ def server(input, output, session):
     def actor_title_prefix():
         # Prefer explicit actor names if any are selected
         names = input.actors_selected() or []
-        if isinstance(names, str):
+        if isinstance(names, tuple):  # <-- fix
+            names = list(names)
+        elif isinstance(names, str):
             names = [names]
         if names:
             shown = names[:2]
@@ -97,20 +99,24 @@ def server(input, output, session):
 
         # Else show the first selected type combo
         combos = input.actors_type_combo() or []
-        if isinstance(combos, str):
+        if isinstance(combos, tuple):  # <-- add this too
+            combos = list(combos)
+        elif isinstance(combos, str):
             combos = [combos]
         if combos:
             return " | ".join(combos[:2]) + (f" + {len(combos)-2} more" if len(combos) > 2 else "")
+
         
         # Actor-attribute flags (international/regional/women)
         flags = input.actors_flags() or []
+        if isinstance(flags, tuple):
+            flags = list(flags)
         flag_labels = {
             "international": "International",
             "regional": "Regional",
             "women": "Women",
         }
         if flags:
-            # If only one attribute selected and no actor/type chosen, use that as title
             if not names and not combos and len(flags) == 1:
                 return f"{flag_labels[flags[0]]} Actors"
             elif not names and not combos and len(flags) > 1:
@@ -338,6 +344,10 @@ def server(input, output, session):
     def filtered_data_general():
         """Apply non-actor filters to pax data."""
         df = signatories.copy()
+        # Apply UN Type filter (so charts also respect it)
+        selected_un_types = input.actors_un_type() or []
+        if selected_un_types:
+            df = df[df["un_type"].isin(selected_un_types)]
 
         countries = input.actors_country()
         if countries:
