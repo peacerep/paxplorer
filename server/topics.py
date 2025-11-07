@@ -94,6 +94,47 @@ def server(input, output, session):
 
         return f"Topics: {' | '.join(parts)}"
     
+    @reactive.calc
+    def topics_title_prefix():
+        """Return a clean, readable title for selected topics respecting hierarchy and AND/OR logic."""
+        selected = input.selected_topics()
+        if not selected:
+            return "All Topics"
+
+        clean = []
+        for t in selected:
+            # Clean up category/issue markers
+            t = (
+                t.replace("CATEGORY:", "")
+                .replace("ISSUE:", "")
+                .replace("SUB-ISSUE:", "")
+                .strip()
+            )
+
+            # Handle hierarchy depth
+            parts = [p.strip() for p in t.split(">") if p.strip()]
+            if len(parts) == 1:
+                label = parts[0]
+            elif len(parts) == 2:
+                label = parts[-1]
+            else:  # len >= 3
+                label = " > ".join(parts[-2:])
+            clean.append(label)
+
+        # Remove duplicates, preserve order
+        clean = list(dict.fromkeys(clean))
+
+        # --- Combine into a readable string ---
+        if len(clean) == 1:
+            return clean[0]
+        elif len(clean) == 2:
+            return f"{clean[0]}, {clean[1]}"
+        elif len(clean) == 3:
+            return f"{clean[0]}, {clean[1]}, {clean[2]}"
+        else:
+            return f"{', '.join(clean[:3])} + {len(clean) - 3} more"
+
+    
     # -------------------------------------------------------
     #  POPULATE TOPIC AND FILTER DROPDOWNS
     # -------------------------------------------------------
@@ -332,7 +373,24 @@ def server(input, output, session):
 
             filtered = df[df["AgtId"].isin(valid_agt_ids)]
             return filtered
+        
+    @reactive.effect
+    @reactive.event(input.topics_reset_filters)
+    def _():
+        """Reset all topic-related filters and controls to their default states."""
 
+        # --- Main topic selectors ---
+        ui.update_selectize("selected_topics", selected=[])
+
+        # --- AND / OR logic toggle ---
+        if hasattr(input, "topics_logic"):
+            ui.update_radio_buttons("topics_logic", selected="OR")  # or whatever your default is
+
+        # --- Custom title input (if present) ---
+        if hasattr(input, "topics_custom_title"):
+            ui.update_text("topics_custom_title", value="")
+
+        # You can add other ui.update_* calls here if you add more topic controls later.
 
 
     @reactive.calc
@@ -455,7 +513,7 @@ def server(input, output, session):
         # Update layout
         fig.update_layout(
             title={
-                "text": "Geographic Distribution of Agreements with Selected Topics",
+                "text": f"Geographic Distribution of Agreements with {topics_title_prefix()}",
                 "x": 0.5,
                 "xanchor": "center",
                 "font": {"size": 18}
@@ -524,7 +582,7 @@ def server(input, output, session):
 
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel(y_title, fontsize=12)
-        ax.set_title("Agreements with Selected Topics Over Time", fontsize=16, fontweight="bold", pad=20, y=1.01)
+        ax.set_title(f"Agreements with {topics_title_prefix()} Over Time", fontsize=16, fontweight="bold", pad=20, y=1.01)
         ax.grid(alpha=0.3)
         plt.ylim(0, y_values.max() * 1.15)
         plt.tight_layout()
@@ -574,7 +632,7 @@ def server(input, output, session):
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel("Number of Agreements", fontsize=12)
         ax.set_title(
-            f"Agreements with Selected Topics by {input.topics_group_mode()} Over Time",
+            f"Agreements with {topics_title_prefix()} by {input.topics_group_mode()} Over Time",
             fontsize=16,
             fontweight="bold",
             pad=20,
@@ -628,7 +686,7 @@ def server(input, output, session):
                 x - width / 2,
                 data["filtered_percentage"],
                 width,
-                label="Selected Topics",
+                label=f"Agts with {topics_title_prefix()}",
                 color="#091f40",
             )
             bars_all = ax.bar(
@@ -671,7 +729,7 @@ def server(input, output, session):
         # --- Shared styling for both modes ---
         ax.set_xlabel("Stage", fontsize=12)
         ax.set_title(
-            "Agreements with Selected Topics by Stage",
+            f"Agreements with {topics_title_prefix()}, by Stage",
             fontsize=16,
             fontweight="bold",
             pad=20,
@@ -705,7 +763,7 @@ def server(input, output, session):
             ax.set_xlabel("Number of Agreements")
             ax.set_ylabel("Peace Process")
             ax.set_title(
-                f"Peace Processes with Selected Topics (Top {int(n)})",
+                f"Peace Processes with {topics_title_prefix()} (Top {int(n)})",
                 fontsize=16,
                 fontweight="bold"
             )
@@ -731,7 +789,7 @@ def server(input, output, session):
             ax.legend(title="Stage", bbox_to_anchor=(0.5, 1), loc="lower center", ncol=ncol, frameon=False)
             ax.set_xlabel("Number of Agreements")
             ax.set_ylabel("Peace Process")
-            ax.set_title("Peace Processes by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.09)
+            ax.set_title(f"Peace Processes with {topics_title_prefix()}, by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.09)
 
         plt.tight_layout()
         return fig
@@ -803,7 +861,7 @@ def server(input, output, session):
             ax.text(width + max(data["count"]) * 0.01, bar.get_y() + bar.get_height()/2,
                     f"{int(width)}", ha="left", va="center", fontsize=9)
         ax.set_xlabel("Number of Agreements")
-        ax.set_title("Party Actors Signing Agreements", fontsize=16,
+        ax.set_title(f"Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16,
                 fontweight="bold")
         ax.set_xlim(0, data["count"].max() * 1.15)
         plt.tight_layout()
@@ -823,7 +881,7 @@ def server(input, output, session):
             ax.text(width + max(data["count"]) * 0.01, bar.get_y() + bar.get_height()/2,
                     f"{int(width)}", ha="left", va="center", fontsize=9)
         ax.set_xlabel("Number of Agreements")
-        ax.set_title("Third-Party Actors Signing Agreements", fontsize=16,
+        ax.set_title(f"Third-Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16,
                 fontweight="bold")
         ax.set_xlim(0, data["count"].max() * 1.15)
         plt.tight_layout()

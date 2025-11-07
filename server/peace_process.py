@@ -84,6 +84,8 @@ def get_pp_filter_text_for_png(get_applied_filters_fn) -> str:
     return " | ".join(filters)  # Changed to match home.py style
 
 
+
+
 # def get_data_version(load_data_fn) -> str:
 #     try:
 #         pax = load_data_fn()["pax"]
@@ -509,6 +511,11 @@ def server(input, output, session):
             style="font-weight: 500;"
         )
     
+    @reactive.calc
+    def selected_pp():
+        """Reactive peace process name accessible everywhere."""
+        return input.selected_peace_process() or "Selected Process"
+    
     # =========================================================================
     # RESET FILTERS
     # =========================================================================
@@ -906,7 +913,7 @@ def server(input, output, session):
         
         ax.set_xlabel(xlabel, fontsize=12)
         ax.set_ylabel("Party Actors", fontsize=12)
-        ax.set_title("Party Signatories", fontsize=14, fontweight='bold')
+        ax.set_title(f"Party Signatories in {selected_pp()}", fontsize=14, fontweight='bold')
 
         # --- Add xlim for extra space on right side ---
         max_val = max(y_vals)
@@ -959,7 +966,7 @@ def server(input, output, session):
         
         ax.set_xlabel(xlabel, fontsize=12)
         ax.set_ylabel("Third Party Actors", fontsize=12)
-        ax.set_title("Third Party Signatories", fontsize=14, fontweight='bold')
+        ax.set_title(f"Third Party Signatories in {selected_pp()}", fontsize=14, fontweight='bold')
 
         # --- Add xlim for extra space on right side ---
         max_val = max(y_vals)
@@ -1410,7 +1417,7 @@ def server(input, output, session):
         # Dynamic title placement (to clear legend)
         if input.pp_topics_show_stage_legend():
             ax.set_title(
-                "Issues in Peace Process",
+                f"Issues in {selected_pp()}",
                 fontsize=14,
                 fontweight="bold",
                 pad=20,
@@ -1418,7 +1425,7 @@ def server(input, output, session):
             )
         else:
             ax.set_title(
-                "Issues in Peace Process",
+                f"Issues in {selected_pp()}",
                 fontsize=14,
                 fontweight="bold",
                 pad=12,
