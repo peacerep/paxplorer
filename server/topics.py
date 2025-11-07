@@ -133,6 +133,66 @@ def server(input, output, session):
             return f"{clean[0]}, {clean[1]}, {clean[2]}"
         else:
             return f"{', '.join(clean[:3])} + {len(clean) - 3} more"
+        
+    # def get_topics_chart_title(input_name: str, default_suffix: str):
+    #     """Return custom title if provided, else build it dynamically."""
+    #     # Pull user-entered text if any
+    #     custom_title = getattr(input, input_name)().strip() if hasattr(input, input_name) else ""
+    #     if custom_title:
+    #         return custom_title  # User override
+
+    #     # Otherwise use the smart dynamic title
+    #     return f"Agreements with {topics_title_prefix()} {default_suffix}"
+    
+    # def get_topics_chart_title(input_name: str, default_suffix: str):
+    #     """Return user custom title if provided, otherwise dynamic title."""
+    #     custom_title = ""
+    #     if hasattr(input, input_name):
+    #         val = getattr(input, input_name)()
+    #         if val:
+    #             custom_title = val.strip()
+
+    #     if custom_title:
+    #         return custom_title
+
+    #     # Fall back to automatic title
+    #     return f"Agreements with {topics_title_prefix()} {default_suffix}"
+
+    def get_topics_chart_title(    input_name: str,    default_suffix: str = "",    dynamic_parts: str = "",    base_prefix: str = "Agreements with"):
+        """
+        Return user custom title if provided, otherwise smart dynamic title.
+
+        Parameters
+        ----------
+        input_name : str
+            The custom title input ID.
+        default_suffix : str
+            Optional trailing phrase (e.g. 'Over Time').
+        dynamic_parts : str
+            Optional context fragment (e.g. '(Top 10)' or 'by Stage').
+        base_prefix : str
+            The starting phrase (e.g. 'Agreements with' or 'Peace Processes including').
+        """
+        # --- Custom override ---
+        custom_title = ""
+        if hasattr(input, input_name):
+            val = getattr(input, input_name)()
+            if val:
+                custom_title = val.strip()
+
+        if custom_title:
+            return custom_title  # user override wins
+
+        # --- Default dynamic build ---
+        base = f"{base_prefix} {topics_title_prefix()}"
+        if dynamic_parts:
+            base += f" {dynamic_parts.strip()}"
+        if default_suffix:
+            base += f" {default_suffix.strip()}"
+        return base.strip()
+
+
+
 
     
     # -------------------------------------------------------
@@ -582,7 +642,8 @@ def server(input, output, session):
 
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel(y_title, fontsize=12)
-        ax.set_title(f"Agreements with {topics_title_prefix()} Over Time", fontsize=16, fontweight="bold", pad=20, y=1.01)
+        #ax.set_title(f"Agreements with {topics_title_prefix()} Over Time", fontsize=16, fontweight="bold", pad=20, y=1.01)
+        ax.set_title(get_topics_chart_title("topics_custom_title_over_time", "Over Time"),    fontsize=16, fontweight="bold", y=1.01)
         ax.grid(alpha=0.3)
         plt.ylim(0, y_values.max() * 1.15)
         plt.tight_layout()
@@ -631,13 +692,25 @@ def server(input, output, session):
         # === Axis and title ===
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel("Number of Agreements", fontsize=12)
+        # ax.set_title(
+        #     f"Agreements with {topics_title_prefix()} by {input.topics_group_mode()} Over Time",
+        #     fontsize=16,
+        #     fontweight="bold",
+        #     pad=20,
+        #     y=1.15,
+        # )
         ax.set_title(
-            f"Agreements with {topics_title_prefix()} by {input.topics_group_mode()} Over Time",
+            get_topics_chart_title(
+                "topics_custom_title_grouped",
+                "Over Time",
+                f"by {input.topics_group_mode()}"
+            ),
             fontsize=16,
             fontweight="bold",
             pad=20,
             y=1.15,
         )
+
         plt.xticks(rotation=45, ha="right")
 
         # === Legend (consistent with peace_process) ===
@@ -728,13 +801,18 @@ def server(input, output, session):
 
         # --- Shared styling for both modes ---
         ax.set_xlabel("Stage", fontsize=12)
-        ax.set_title(
-            f"Agreements with {topics_title_prefix()}, by Stage",
+        # ax.set_title(
+        #     f"Agreements with {topics_title_prefix()}, by Stage",
+        #     fontsize=16,
+        #     fontweight="bold",
+        #     pad=20,
+        #     y=1.15,
+        # )
+        ax.set_title(get_topics_chart_title("topics_custom_title_stage", "by Stage"),
             fontsize=16,
             fontweight="bold",
             pad=20,
-            y=1.15,
-        )
+            y=1.15,),
         plt.xticks(rotation=45, ha="right")
         plt.tight_layout()
         return fig
@@ -762,11 +840,22 @@ def server(input, output, session):
             n = input.topics_top_processes() or 20
             ax.set_xlabel("Number of Agreements")
             ax.set_ylabel("Peace Process")
+            # ax.set_title(
+            #     f"Peace Processes with {topics_title_prefix()} (Top {int(n)})",
+            #     fontsize=16,
+            #     fontweight="bold"
+            # )
             ax.set_title(
-                f"Peace Processes with {topics_title_prefix()} (Top {int(n)})",
+                get_topics_chart_title(
+                    "topics_custom_title_pp",
+                    "",
+                    f"(Top {int(n)})",
+                    base_prefix="Peace Processes including"
+                ),
                 fontsize=16,
                 fontweight="bold"
             )
+
 
         else:
             # Stage breakdown
@@ -786,11 +875,21 @@ def server(input, output, session):
                     ax.text(total + totals.max() * 0.01, i, f"{int(total)}", va="center", fontsize=9, fontweight="bold")
 
             ncol = min(4, len(stage_pivot.columns))
+            n = input.topics_top_processes() or 20
             ax.legend(title="Stage", bbox_to_anchor=(0.5, 1), loc="lower center", ncol=ncol, frameon=False)
             ax.set_xlabel("Number of Agreements")
             ax.set_ylabel("Peace Process")
-            ax.set_title(f"Peace Processes with {topics_title_prefix()}, by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.09)
-
+            #ax.set_title(f"Peace Processes with {topics_title_prefix()}, by Stage of Process", fontsize=16, fontweight="bold", pad=15, y=1.09)
+            ax.set_title(
+                get_topics_chart_title(
+                    "topics_custom_title_pp",
+                    "",
+                    f"by Stage (Top {int(n)})",
+                    base_prefix="Peace Processes including"  
+                ),
+                fontsize=16,
+                fontweight="bold", y=1.09
+            )
         plt.tight_layout()
         return fig
 
@@ -861,8 +960,9 @@ def server(input, output, session):
             ax.text(width + max(data["count"]) * 0.01, bar.get_y() + bar.get_height()/2,
                     f"{int(width)}", ha="left", va="center", fontsize=9)
         ax.set_xlabel("Number of Agreements")
-        ax.set_title(f"Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16,
-                fontweight="bold")
+        #ax.set_title(f"Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16, fontweight="bold")
+        ax.set_title(get_topics_chart_title("topics_custom_title_party",
+                    base_prefix="Party Signatories to Agreements with "  ), fontsize=16, fontweight="bold")
         ax.set_xlim(0, data["count"].max() * 1.15)
         plt.tight_layout()
         return fig
@@ -881,8 +981,9 @@ def server(input, output, session):
             ax.text(width + max(data["count"]) * 0.01, bar.get_y() + bar.get_height()/2,
                     f"{int(width)}", ha="left", va="center", fontsize=9)
         ax.set_xlabel("Number of Agreements")
-        ax.set_title(f"Third-Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16,
-                fontweight="bold")
+        #ax.set_title(f"Third-Party Actors Signing Agreements with {topics_title_prefix()}", fontsize=16,fontweight="bold")
+        ax.set_title(get_topics_chart_title("topics_custom_title_third", 
+                    base_prefix="Third Party Signatories to Agreements with "), fontsize=16, fontweight="bold")
         ax.set_xlim(0, data["count"].max() * 1.15)
         plt.tight_layout()
         return fig

@@ -166,6 +166,13 @@ layout = ui.nav_panel(
                         ),
                     
                     ui.input_radio_buttons("topics_time_mode", "Show as", ["Count", "Percentage"]),
+                    # Optional custom title box
+                    ui.input_text(
+                        "topics_custom_title_over_time",
+                        "Custom Chart Title (optional):",
+                        placeholder="Enter custom title for this chart…",
+                        width="100%",
+                    ),
                     ui.div(
                         ui.output_plot("topics_over_time", height="650px")
                     ),
@@ -189,6 +196,12 @@ layout = ui.nav_panel(
                         style="font-style: italic; color: #555; font-size: 0.9em; margin-top: 8px;"
                         ),
                     ui.input_radio_buttons("topics_group_mode", "Show bars by:", ["Stage", "Agreement Type"]),
+                   ui.input_text(
+                        "topics_custom_title_grouped",
+                        "Custom Chart Title (optional):",
+                        placeholder="Enter custom title for this chart…",
+                        width="100%",
+                    ),
                     ui.div(
                         ui.output_plot("topics_grouped_over_time", height="650px"), 
                     ),
@@ -211,7 +224,12 @@ layout = ui.nav_panel(
                         style="font-style: italic; color: #555; font-size: 0.9em; margin-top: 8px;"
                         ),
                     ui.input_radio_buttons("topics_stage_mode", "Select Metric", ["Count", "Percentage"]),
-                    
+                    ui.input_text(
+                        "topics_custom_title_stage",
+                        "Custom Chart Title (optional):",
+                        placeholder="Enter custom title for this chart…",
+                        width="100%",
+                    ),
                     ui.div(
                         ui.output_plot("topics_by_stage", height="650px"), 
                     ),
@@ -235,7 +253,12 @@ layout = ui.nav_panel(
                         ),
                     ui.input_slider("topics_top_processes", "Show Top N Peace Processes", min=5, max=30, value=20, step=1, width="50%"),
                     ui.input_checkbox("topics_show_stage_legend", "Show by Stage of Process", False),
-
+                    ui.input_text(
+                        "topics_custom_title_pp",
+                        "Custom Chart Title (optional):",
+                        placeholder="Enter custom title for this chart…",
+                        width="100%",
+                    ),
                     ui.div(
                         ui.output_plot("topics_by_peace_process", height="650px"),
                     ),
@@ -275,6 +298,12 @@ layout = ui.nav_panel(
                     ui.input_slider("topics_top_actors", "Show Top N Actors", min=5, max=30, value=15, step=1, width="50%"),
                     ui.div(
                         ui.h4("Party Signatories to Agreements", class_="mb-3"),
+                        ui.input_text(
+                            "topics_custom_title_party",
+                            "Custom Chart Title (optional):",
+                            placeholder="Enter custom title for this chart…",
+                            width="100%",
+                        ),
                         ui.output_plot("topics_party_actors", height="600px"),
                         class_="mb-4"
                     ),
@@ -285,6 +314,12 @@ layout = ui.nav_panel(
                     ui.hr(),
                     ui.div(
                         ui.h4("Third-Party signatories to Agreements", class_="mb-3"),
+                        ui.input_text(
+                            "topics_custom_title_third",
+                            "Custom Chart Title (optional):",
+                            placeholder="Enter custom title for this chart…",
+                            width="100%",
+                        ),
                         ui.output_plot("topics_third_actors", height="600px"),
                         class_="mb-4"
                     ),
