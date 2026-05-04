@@ -64,11 +64,11 @@ def make_csv_download(data_func, filename):
             df = data_func()
             if not isinstance(df, pd.DataFrame):
                 raise ValueError("CSV export function must return a pandas DataFrame")
-            
-            # Create CSV string and encode to bytes
-            csv_string = df.to_csv(index=False)
+
+            # Create CSV string with explicit UTF-8 encoding and encode to bytes
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return BytesIO(csv_string.encode('utf-8'))
-            
+
         except Exception as e:
             print(f"Error in CSV export: {e}")
             # Return empty CSV if something goes wrong

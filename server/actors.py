@@ -126,6 +126,44 @@ def server(input, output, session):
 
         return "All actors"
 
+    def get_chart_title(input_name: str, default_suffix: str = "", dynamic_parts: str = "", base_prefix: str = ""):
+        """
+        Generic helper: Return custom chart title if provided, otherwise build dynamic title.
+
+        Parameters:
+        - input_name: ID of the custom title input field
+        - default_suffix: Trailing phrase (e.g., 'Over Time')
+        - dynamic_parts: Additional dynamic phrase (e.g., 'by Stage')
+        - base_prefix: Starting phrase; if provided with {}, {actor} placeholder is replaced with actor name
+        """
+        # Check for custom input
+        custom_title = ""
+        if hasattr(input, input_name):
+            val = getattr(input, input_name)()
+            if val:
+                custom_title = val.strip()
+
+        if custom_title:
+            return custom_title
+
+        # Build default dynamic title
+        actor_name = actor_title_prefix()
+
+        if not base_prefix:
+            title = f"Agreements signed by {actor_name}"
+        else:
+            # Replace {actor} placeholder if present, otherwise append actor name after base_prefix
+            if "{actor}" in base_prefix:
+                title = base_prefix.replace("{actor}", actor_name)
+            else:
+                title = f"{base_prefix} {actor_name}"
+
+        if dynamic_parts:
+            title += f" {dynamic_parts.strip()}"
+        if default_suffix:
+            title += f" {default_suffix.strip()}"
+        return title.strip()
+
     def get_actor_filter_text():
         """One-line filter summary for PNG exports."""
         bits = []
@@ -612,7 +650,7 @@ def server(input, output, session):
     @render.download(filename="pa_x_export.csv")
     def export_pa_x_csv():
         df = export_dataset()
-        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        csv_bytes = df.to_csv(index=False, encoding="utf-8").encode("utf-8")
         return BytesIO(csv_bytes)
 
     # Preview toggle
@@ -657,6 +695,15 @@ def server(input, output, session):
         ui.update_checkbox_group("actors_flags", selected=[], session=session)
         ui.update_checkbox("actors_third_party_only", value=False, session=session)
         ui.update_checkbox_group("actors_un_type", selected=[], session=session)
+        # Reset custom chart titles
+        ui.update_text("actors_custom_title_over_time", value="", session=session)
+        ui.update_text("actors_custom_title_stage", value="", session=session)
+        ui.update_text("actors_custom_title_pp", value="", session=session)
+        ui.update_text("actors_custom_title_party", value="", session=session)
+        ui.update_text("actors_custom_title_third", value="", session=session)
+        ui.update_text("actors_custom_title_topics", value="", session=session)
+        ui.update_text("actors_custom_title_radial", value="", session=session)
+        ui.update_text("actors_custom_title_pie", value="", session=session)
 
 
     @reactive.effect
@@ -673,6 +720,15 @@ def server(input, output, session):
         # Reset year range
         yr = year_range()
         ui.update_slider("actors_year_range", value=yr, session=session)
+        # Reset custom chart titles
+        ui.update_text("actors_custom_title_over_time", value="", session=session)
+        ui.update_text("actors_custom_title_stage", value="", session=session)
+        ui.update_text("actors_custom_title_pp", value="", session=session)
+        ui.update_text("actors_custom_title_party", value="", session=session)
+        ui.update_text("actors_custom_title_third", value="", session=session)
+        ui.update_text("actors_custom_title_topics", value="", session=session)
+        ui.update_text("actors_custom_title_radial", value="", session=session)
+        ui.update_text("actors_custom_title_pie", value="", session=session)
 
 
     @render.ui
@@ -1139,7 +1195,7 @@ def server(input, output, session):
 
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel(ylab, fontsize=12)
-        ax.set_title(f"Number of Agreements signed by {actor_title_prefix()} per Year", fontsize=16, fontweight="bold", pad=20) #yhere
+        ax.set_title(get_chart_title("actors_custom_title_over_time", "Over Time"), fontsize=16, fontweight="bold", pad=20)
         ax.grid(alpha=0.3)
         plt.ylim(0, max(y) * 1.15 if len(y) else 1)
         plt.tight_layout()
@@ -1202,7 +1258,7 @@ def server(input, output, session):
 
         ax.set_xlabel("Stage", fontsize=12)
         ax.set_title(
-            f"Agreements signed by {actor_title_prefix()}, by Stage of Process",
+            get_chart_title("actors_custom_title_stage", "by Stage of Process"),
             fontsize=16,
             fontweight="bold",
             pad=20,
@@ -1312,7 +1368,7 @@ def server(input, output, session):
             ax.set_xlabel(xlabel)
             ax.set_ylabel("Peace Process")
             ax.set_title(
-                f"Peace Processes with {actor_title_prefix()} {show_n_text}",
+                get_chart_title("actors_custom_title_pp", f"{show_n_text}", "", "Peace Processes with"),
                 fontsize=16, fontweight="bold"
             )
 
@@ -1336,7 +1392,7 @@ def server(input, output, session):
             ax.legend(title="Stage", bbox_to_anchor=(0.5, 1), loc="lower center", ncol=ncol, frameon=False)
             ax.set_xlabel("Number of Agreements")
             ax.set_ylabel("Peace Process")
-            ax.set_title(f"Peace Processes by Stage of Process {show_n_text}",
+            ax.set_title(get_chart_title("actors_custom_title_pp", f"by Stage of Process {show_n_text}", "", "Peace Processes with"),
                         fontsize=16, fontweight="bold", pad=15, y=1.1)
 
         plt.tight_layout()
@@ -1358,7 +1414,7 @@ def server(input, output, session):
         ax.set_xlim(0, data["count"].max() * 1.15)
         ax.set_xlabel("Number of Co-signed Agreements")
         n = input.actors_top_n() or 15
-        ax.set_title(f"Top {int(n)} Party Co-signatories with {actor_title_prefix()}", fontsize=16, fontweight="bold")
+        ax.set_title(get_chart_title("actors_custom_title_party", f"(Top {int(n)})", "", "Party Co-signatories with"), fontsize=16, fontweight="bold")
         plt.tight_layout()
         return fig
 
@@ -1376,7 +1432,7 @@ def server(input, output, session):
         ax.set_xlim(0, data["count"].max() * 1.15)
         ax.set_xlabel("Number of Co-signed Agreements")
         n = input.actors_top_n() or 15
-        ax.set_title(f"Top {int(n)} Third-Party Co-signatories with {actor_title_prefix()}", fontsize=16, fontweight="bold")
+        ax.set_title(get_chart_title("actors_custom_title_third", f"(Top {int(n)})", "", "Third-Party Co-signatories with"), fontsize=16, fontweight="bold")
         plt.tight_layout()
         return fig
 
@@ -1402,7 +1458,7 @@ def server(input, output, session):
                     ha="left", va="center", fontsize=9, fontweight="bold")
 
         ax.set_xlim(0, data["count"].max() * 1.15)
-        ax.set_title(f"Topics in Agreements signed by {actor_title_prefix()}", fontsize=16, fontweight="bold")
+        ax.set_title(get_chart_title("actors_custom_title_topics", "", "", "Topics in Agreements signed by"), fontsize=16, fontweight="bold")
             # --- Fix spacing above and below bars ---
         ax.margins(y=0)  # remove default top/bottom padding
         ax.set_ylim(-0.5, len(data) - 0.5)  # exact fit to bars
@@ -1432,7 +1488,7 @@ def server(input, output, session):
         ax.set_yticklabels([])
         ax.set_xticks(angles[:-1])
         ax.set_xticklabels(categories, fontsize=9)
-        ax.set_title(f"Topics in Agreements signed by {actor_title_prefix()}", fontsize=14, fontweight="bold", pad=20)
+        ax.set_title(get_chart_title("actors_custom_title_radial", "", "", "Topics in Agreements signed by"), fontsize=14, fontweight="bold", pad=20)
         plt.tight_layout()
         return fig
 
@@ -1456,7 +1512,7 @@ def server(input, output, session):
             startangle=140,
             textprops={"fontsize": 9},
         )
-        ax.set_title(f"Types of Agreements signed by {actor_title_prefix()}", fontsize=14, fontweight="bold")
+        ax.set_title(get_chart_title("actors_custom_title_pie", "", "", "Types of Agreements signed by"), fontsize=14, fontweight="bold")
         plt.tight_layout()
         return fig
 
@@ -1547,7 +1603,7 @@ def server(input, output, session):
     @render.download(filename="actors_over_time.csv")
     def actors_over_time_csv():
         df = actors_time_data()
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_by_stage.png")
     def actors_by_stage_png():
@@ -1564,7 +1620,7 @@ def server(input, output, session):
     @render.download(filename="actors_by_stage.csv")
     def actors_by_stage_csv():
         df = actors_stage_data()
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_map.csv")
     def actors_map_csv():
@@ -1574,7 +1630,7 @@ def server(input, output, session):
             export_data.columns = ["ISO_Code", "Country_Name", "Number_of_Agreements", "Latitude", "Longitude"]
         else:
             export_data = pd.DataFrame(columns=["ISO_Code", "Country_Name", "Number_of_Agreements", "Latitude", "Longitude"])
-        return io.BytesIO(export_data.to_csv(index=False).encode("utf-8"))
+        return io.BytesIO(export_data.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_peace_process.png")
     def actors_peace_process_png():
@@ -1591,7 +1647,7 @@ def server(input, output, session):
     @render.download(filename="actors_peace_process.csv")
     def actors_peace_process_csv():
         df = actors_peace_process_data()
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_party_cosign.png")
     def actors_party_cosign_png():
@@ -1620,12 +1676,12 @@ def server(input, output, session):
     @render.download(filename="actors_party_cosign.csv")
     def actors_party_cosign_csv():
         df = actors_cosign_split_data()["party"]
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_third_cosign.csv")
     def actors_third_cosign_csv():
         df = actors_cosign_split_data()["third"]
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_topics.png")
     def actors_topics_png():
@@ -1642,7 +1698,7 @@ def server(input, output, session):
     @render.download(filename="actors_topics.csv")
     def actors_topics_csv():
         df = actors_topics_data()
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
     
     @render.download(filename="actors_radial_topics.png") 
     def actors_topics_radial_png():
@@ -1659,7 +1715,7 @@ def server(input, output, session):
     @render.download(filename="actors_radial_topics.csv")
     def actors_topics_radial_csv():
         df = actors_topics_data()
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     @render.download(filename="actors_agreement_type_pie.png")
     def actors_agreement_type_pie_png():
@@ -1677,7 +1733,7 @@ def server(input, output, session):
     def actors_agreement_type_pie_csv():
         df = filtered_agreements()[["agt_type", "AgtId"]]
         df = df.groupby("agt_type")["AgtId"].nunique().reset_index(name="count")
-        return io.BytesIO(df.to_csv(index=False).encode())
+        return io.BytesIO(df.to_csv(index=False, encoding="utf-8").encode("utf-8"))
 
     # -------------------------------------------------------
     #  TABLE (styled)
@@ -1733,7 +1789,7 @@ def server(input, output, session):
         df = actors_table_data().copy()
         # Strip out HTML tags before export
         df["Link"] = df["Link"].str.replace(r"<.*?>", "", regex=True)
-        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        csv_bytes = df.to_csv(index=False, encoding="utf-8").encode("utf-8")
         return BytesIO(csv_bytes)
 
 

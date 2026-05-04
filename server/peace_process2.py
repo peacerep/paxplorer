@@ -1480,7 +1480,7 @@ def server(input, output, session):
     def pp_export_time_csv():
         try:
             df = pp_agreements_time_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1491,7 +1491,7 @@ def server(input, output, session):
     def pp_export_stage_csv():
         try:
             df = pp_stage_analysis_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1502,7 +1502,7 @@ def server(input, output, session):
     def pp_export_agt_type_pie_csv():
         try:
             df = pp_agreement_type_counts()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1520,7 +1520,7 @@ def server(input, output, session):
             if not third_party_df.empty:
                 third_party_df["signatory_type"] = "third_party"
             combined_df = pd.concat([party_df, third_party_df], ignore_index=True)
-            csv_string = combined_df.to_csv(index=False)
+            csv_string = combined_df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1534,7 +1534,7 @@ def server(input, output, session):
             third_party_df = sig_data["third_party"].copy()
             if not third_party_df.empty:
                 third_party_df["signatory_type"] = "third_party"
-            csv_string = third_party_df.to_csv(index=False)
+            csv_string = third_party_df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1545,7 +1545,7 @@ def server(input, output, session):
     def pp_export_topic_categories_csv():
         try:
             df = pp_topics_category_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1556,7 +1556,7 @@ def server(input, output, session):
     def pp_export_topic_subissues_csv():
         try:
             df = pp_topics_subissue_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1567,7 +1567,7 @@ def server(input, output, session):
     def pp_export_topic_issues_csv():
         try:
             df = pp_topics_issue_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1579,7 +1579,7 @@ def server(input, output, session):
         try:
             level = "subissues" if _input_value(input, "pp_topics_radial_subissues", False) else "issues"
             df = _topics_counts_for_radial(level)
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode("utf-8"))
         except Exception as e:
             print(f"Error in CSV export: {e}")

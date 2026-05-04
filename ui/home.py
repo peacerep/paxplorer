@@ -119,8 +119,21 @@ layout = ui.nav_panel(
                 ui.input_radio_buttons("over_time_mode", "Show as :", ["Number", "Percentage"]),
                 ui.output_plot("agreements_over_time", height="650px"),
                 ui.div(
-                    ui.download_button("home_export_over_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2"),
-                    ui.download_button("home_export_over_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                    ui.div(
+                        ui.download_button("home_export_over_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                        ui.download_button("home_export_over_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                        style="display:flex; gap:10px; align-items:center;"
+                    ),
+                    ui.div(
+                        ui.input_text(
+                            "home_custom_title_over_time",
+                            None,
+                            placeholder="Enter custom chart title…",
+                            width="320px",
+                        ),
+                        style="margin-left:auto;"
+                    ),
+                    style="display:flex; align-items:center; gap:16px;",
                     class_="mb-4"
                 ),
             ),
@@ -141,8 +154,21 @@ layout = ui.nav_panel(
                 ui.input_radio_buttons("group_mode", "View agreements over time by:", ["Stage", "Agreement Type"]),
                 ui.output_plot("grouped_over_time", height="650px"),
                 ui.div(
-                    ui.download_button("home_export_grouped_over_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2"),
-                    ui.download_button("home_export_grouped_over_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                    ui.div(
+                        ui.download_button("home_export_grouped_over_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                        ui.download_button("home_export_grouped_over_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                        style="display:flex; gap:10px; align-items:center;"
+                    ),
+                    ui.div(
+                        ui.input_text(
+                            "home_custom_title_grouped",
+                            None,
+                            placeholder="Enter custom chart title…",
+                            width="320px",
+                        ),
+                        style="margin-left:auto;"
+                    ),
+                    style="display:flex; align-items:center; gap:16px;",
                     class_="mb-4"
                 ),
             ),
@@ -163,8 +189,21 @@ layout = ui.nav_panel(
                 ui.input_radio_buttons("stage_mode", "Select Metric", ["Count", "Percentage"]),
                 ui.output_plot("agreements_by_stage", height="650px"),
                 ui.div(
-                    ui.download_button("home_export_stage_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2"),
-                    ui.download_button("home_export_stage_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                    ui.div(
+                        ui.download_button("home_export_stage_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                        ui.download_button("home_export_stage_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                        style="display:flex; gap:10px; align-items:center;"
+                    ),
+                    ui.div(
+                        ui.input_text(
+                            "home_custom_title_stage",
+                            None,
+                            placeholder="Enter custom chart title…",
+                            width="320px",
+                        ),
+                        style="margin-left:auto;"
+                    ),
+                    style="display:flex; align-items:center; gap:16px;",
                     class_="mb-4"
                 ),
             ),
@@ -179,13 +218,26 @@ layout = ui.nav_panel(
                     "Use the filters in the sidebar to see the trends in particular time-frames, regions or agreement types. Deep dive in to topics on the 'Topics' page at the top of the page. "
                 ),
                 ui.p(
-                    "Example RQ: is Security Sector always the topic with the most agreements? ", 
+                    "Example RQ: is Security Sector always the topic with the most agreements? ",
                      style="font-style: italic; color: #555; font-size: 0.9em; margin-top: 8px;"
                 ),
                 ui.output_plot("topic_category_counts", height="650px"),
                 ui.div(
-                    ui.download_button("home_export_topic_cat_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2"),
-                    ui.download_button("home_export_topic_cat_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                    ui.div(
+                        ui.download_button("home_export_topic_cat_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                        ui.download_button("home_export_topic_cat_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                        style="display:flex; gap:10px; align-items:center;"
+                    ),
+                    ui.div(
+                        ui.input_text(
+                            "home_custom_title_topics",
+                            None,
+                            placeholder="Enter custom chart title…",
+                            width="320px",
+                        ),
+                        style="margin-left:auto;"
+                    ),
+                    style="display:flex; align-items:center; gap:16px;",
                     class_="mb-4"
                 ),
             ),

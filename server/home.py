@@ -58,6 +58,37 @@ def server(input, output, session):
         else:  # Agreement Type
             return [type_color_map.get(cat, '#cccccc') for cat in categories]
 
+    def get_chart_title(input_name: str, default_suffix: str = "", dynamic_parts: str = "", base_prefix: str = ""):
+        """
+        Generic helper: Return custom chart title if provided, otherwise build dynamic title.
+
+        Parameters:
+        - input_name: ID of the custom title input field
+        - default_suffix: Trailing phrase (e.g., 'Over Time')
+        - dynamic_parts: Additional dynamic phrase
+        - base_prefix: Starting phrase
+        """
+        # Check for custom input
+        custom_title = ""
+        if hasattr(input, input_name):
+            val = getattr(input, input_name)()
+            if val:
+                custom_title = val.strip()
+
+        if custom_title:
+            return custom_title
+
+        # Build default dynamic title
+        if not base_prefix:
+            base_prefix = "Peace Agreements"
+
+        title = base_prefix
+        if dynamic_parts:
+            title += f" {dynamic_parts.strip()}"
+        if default_suffix:
+            title += f" {default_suffix.strip()}"
+        return title.strip()
+
     # Filter choices calculations
     @reactive.calc
     def country_choices():
@@ -344,7 +375,7 @@ def server(input, output, session):
     @reactive.event(input.reset_filters)
     def _():
         year_min, year_max = year_range()
-        
+
         ui.update_selectize("country", selected=[])
         ui.update_selectize("agt_type", selected=[])
         ui.update_selectize("region", selected=[])
@@ -352,6 +383,10 @@ def server(input, output, session):
         ui.update_selectize("stage", selected=[])
         ui.update_slider("year_range", value=[year_min, year_max])
         ui.update_checkbox("exclude_local_analysis", value=False)
+        ui.update_text("home_custom_title_over_time", value="")
+        ui.update_text("home_custom_title_grouped", value="")
+        ui.update_text("home_custom_title_stage", value="")
+        ui.update_text("home_custom_title_topics", value="")
 
     # Function to get filter text for PNG annotations (FULL VERSION)
     @reactive.calc
@@ -414,9 +449,9 @@ def server(input, output, session):
     @render.plot
     def agreements_over_time():
         merged = agreements_over_time_data()
-        
+
         fig, ax = plt.subplots(figsize=(16, 12))
-        
+
         if input.over_time_mode() == "Percentage":
             y_title = "Percentage of All Agreements"
             color = "#7b8ad6"
@@ -427,22 +462,22 @@ def server(input, output, session):
             color = "#091f40"
             y_values = merged["agreements"]
             labels = merged["agreements"].astype(int).astype(str)
-        
+
         ax.plot(merged["year"], y_values, marker='o', color=color, linewidth=2, markersize=6)
-        
+
         if input.show_labels():
             for x, y, label in zip(merged["year"], y_values, labels):
                 if y > 0:
                     ax.text(x, y + max(y_values) * 0.02, label, ha='center', va='bottom', fontsize=8)
-        
+
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel(y_title, fontsize=12)
-        ax.set_title("Agreements Signed per Year", fontsize=16, fontweight='bold', pad=20)
+        ax.set_title(get_chart_title("home_custom_title_over_time", "Signed per Year"), fontsize=16, fontweight='bold', pad=20)
         ax.grid(True, alpha=0.3)
-        
+
         # Set proper margins and limits
         plt.ylim(0, y_values.max() * 1.15)
-        
+
         return fig
 
     # AGREEMENTS BY STAGE/TYPE OVER TIME
@@ -524,8 +559,8 @@ def server(input, output, session):
         
         ax.set_xlabel("Year", fontsize=12)
         ax.set_ylabel("Number of Agreements", fontsize=12)
-        ax.set_title(f"Number of Agreements per Year, by Agreement {input.group_mode()}", fontsize=16, fontweight='bold', pad=20, y=1.15)
-        
+        ax.set_title(get_chart_title("home_custom_title_grouped", f"by Agreement {input.group_mode()}"), fontsize=16, fontweight='bold', pad=20, y=1.15)
+
         # FIXED: Legend with proper column count
         ncol = len(pivot_df.columns) if len(pivot_df.columns) <= 4 else 4  # Use actual number of columns, max 7
         ax.legend(title=input.group_mode(), bbox_to_anchor=(0.5, 1), loc='lower center', fontsize=10, ncol=ncol)
@@ -620,7 +655,7 @@ def server(input, output, session):
         
         ax.set_xlabel("Stage", fontsize=12)
         ax.set_ylabel(y_title, fontsize=12)
-        ax.set_title("Agreements by Stage of Process", fontsize=16, fontweight='bold', pad=20, y=1.1)
+        ax.set_title(get_chart_title("home_custom_title_stage", "by Stage of Process"), fontsize=16, fontweight='bold', pad=20, y=1.1)
         ax.spines[['top', 'right']].set_visible(False)
         
         plt.xticks(rotation=45, ha='right')
@@ -655,11 +690,11 @@ def server(input, output, session):
         # Fix x-axis limit to accommodate labels
         max_val = max(by_cat_sorted["count"])
         ax.set_xlim(0, max_val * 1.15)
-        
+
         ax.set_xlabel("Number of Agreements", fontsize=12)
         ax.set_ylabel("Topic Category", fontsize=12)
-        ax.set_title("Agreements by Topic Category", fontsize=16, fontweight='bold', pad=20)
-        
+        ax.set_title(get_chart_title("home_custom_title_topics", "by Topic Category"), fontsize=16, fontweight='bold', pad=20)
+
         return fig
 
     # Test PNG export
@@ -689,7 +724,7 @@ def server(input, output, session):
     def export_csv_data(data_func):
         try:
             df = data_func()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -731,7 +766,7 @@ def server(input, output, session):
             
             ax.set_xlabel("Year", fontsize=12)
             ax.set_ylabel(y_title, fontsize=12)
-            ax.set_title("Agreements Signed per Year", fontsize=16, fontweight='bold', pad=20)
+            ax.set_title(get_chart_title("home_custom_title_over_time", "Signed per Year"), fontsize=16, fontweight='bold', pad=20)
             ax.grid(True, alpha=0.3)
             plt.ylim(0, y_values.max() * 1.15)
             
@@ -818,11 +853,11 @@ def server(input, output, session):
             
             ax.set_xlabel("Year", fontsize=12)
             ax.set_ylabel("Number of Agreements", fontsize=12)
-            ax.set_title(f"Agreements by {input.group_mode()} Over Time", fontsize=16, fontweight='bold', pad=25, y=1.08)
-            
+            ax.set_title(get_chart_title("home_custom_title_grouped", f"by {input.group_mode()} Over Time"), fontsize=16, fontweight='bold', pad=25, y=1.08)
+
             # FIXED: Legend with proper column count
             ncol = len(pivot_df.columns) if len(pivot_df.columns) <= 7 else 7
-            ax.legend(title=input.group_mode(), bbox_to_anchor=(0.5, 1.01), 
+            ax.legend(title=input.group_mode(), bbox_to_anchor=(0.5, 1.01),
                      loc='lower center', ncol=ncol, fontsize=9)
             
             plt.xticks(rotation=45)
@@ -920,7 +955,7 @@ def server(input, output, session):
             
             ax.set_xlabel("Stage", fontsize=12)
             ax.set_ylabel(y_title, fontsize=12)
-            ax.set_title("Agreements by Stage of Process", fontsize=16, fontweight='bold', pad=20, y=1.1)
+            ax.set_title(get_chart_title("home_custom_title_stage", "by Stage of Process"), fontsize=16, fontweight='bold', pad=20, y=1.1)
             ax.spines[['top', 'right']].set_visible(False)
             
             plt.xticks(rotation=45, ha='right')
@@ -991,8 +1026,8 @@ def server(input, output, session):
             
             ax.set_xlabel("Number of Agreements", fontsize=12)
             ax.set_ylabel("Topic Category", fontsize=12)
-            ax.set_title("Agreements by Topic Category", fontsize=16, fontweight='bold', pad=20)
-            
+            ax.set_title(get_chart_title("home_custom_title_topics", "by Topic Category"), fontsize=16, fontweight='bold', pad=20)
+
             # Get filter text and add as subtitle
             filter_text = get_filter_text_for_png()
             ax.text(0.5, 0.025, filter_text, transform=fig.transFigure, 

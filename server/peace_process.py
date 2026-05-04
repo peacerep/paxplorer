@@ -210,7 +210,49 @@ def server(input, output, session):
         "figure.subplot.top": 0.9,
     })
 
-    
+    # =========================================================================
+    # HELPERS
+    # =========================================================================
+
+    def get_chart_title(input_name: str, default_suffix: str = "", dynamic_parts: str = "", base_prefix: str = ""):
+        """
+        Generic helper: Return custom chart title if provided, otherwise build dynamic title.
+
+        Parameters:
+        - input_name: ID of the custom title input field
+        - default_suffix: Trailing phrase (e.g., 'Over Time')
+        - dynamic_parts: Additional dynamic phrase (e.g., 'by Stage')
+        - base_prefix: Starting phrase; if provided with {}, {actor} placeholder is replaced
+        """
+        # Check for custom input
+        custom_title = ""
+        if hasattr(input, input_name):
+            val = getattr(input, input_name)()
+            if val:
+                custom_title = val.strip()
+
+        if custom_title:
+            return custom_title
+
+        # Build default dynamic title - for peace process page, use selected peace process
+        selected_pp = input.selected_peace_process() if hasattr(input, 'selected_peace_process') else None
+        process_name = selected_pp if selected_pp else "Agreements"
+
+        if not base_prefix:
+            title = f"Peace Process: {process_name}"
+        else:
+            # Replace {process} placeholder if present, otherwise append process name
+            if "{process}" in base_prefix:
+                title = base_prefix.replace("{process}", process_name)
+            else:
+                title = f"{base_prefix} {process_name}"
+
+        if dynamic_parts:
+            title += f" {dynamic_parts.strip()}"
+        if default_suffix:
+            title += f" {default_suffix.strip()}"
+        return title.strip()
+
     # =========================================================================
     # DATA LOADING - Load once and cache
     # =========================================================================
@@ -598,6 +640,13 @@ def server(input, output, session):
         if date_min and date_max:
             ui.update_date_range("pp_date_range", start=date_min, end=date_max)
         ui.update_checkbox("pp_exclude_local_analysis", value=False)
+        # Reset custom chart titles
+        ui.update_text("pp_custom_title_time", value="", session=session)
+        ui.update_text("pp_custom_title_stage", value="", session=session)
+        ui.update_text("pp_custom_title_party", value="", session=session)
+        ui.update_text("pp_custom_title_third", value="", session=session)
+        ui.update_text("pp_custom_title_topics", value="", session=session)
+        ui.update_text("pp_custom_title_diffusion", value="", session=session)
     
     # =========================================================================
     # SUMMARY STATISTICS
@@ -804,7 +853,7 @@ def server(input, output, session):
         
         ax.set_xlabel("Time Period", fontsize=12)
         ax.set_ylabel("Number of Agreements", fontsize=12)
-        ax.set_title(f"Number of Agreements Over Time, by Stage of Process", fontsize=16, fontweight='bold', pad=20, y=1.145)
+        ax.set_title(get_chart_title("pp_custom_title_time", "by Stage of Process"), fontsize=16, fontweight='bold', pad=20, y=1.145)
         
         # Format x-axis based on granularity
         ax.tick_params(axis='x', rotation=45)
@@ -903,7 +952,7 @@ def server(input, output, session):
         ax.set_xticklabels(stage_data["stage_label"])
         ax.set_xlabel("Stage", fontsize=12)
         ax.set_ylabel("Percentage of Agreements", fontsize=12)
-        ax.set_title("Percentage of Agreements per Stage of Process", fontsize=16, fontweight='bold', pad=20, y=1.15)
+        ax.set_title(get_chart_title("pp_custom_title_stage", "per Stage of Process"), fontsize=16, fontweight='bold', pad=20, y=1.15)
         ax.spines[['top', 'right']].set_visible(False)
         
         y_max = max(bars1.datavalues.max(), bars2.datavalues.max())
@@ -986,7 +1035,7 @@ def server(input, output, session):
         
         ax.set_xlabel(xlabel, fontsize=12)
         ax.set_ylabel("Party Actors", fontsize=12)
-        ax.set_title(f"Party Signatories in {selected_pp()}", fontsize=14, fontweight='bold')
+        ax.set_title(get_chart_title("pp_custom_title_party", "", "", "Party Signatories in"), fontsize=14, fontweight='bold')
 
         # --- Add xlim for extra space on right side ---
         max_val = max(y_vals)
@@ -1039,7 +1088,7 @@ def server(input, output, session):
         
         ax.set_xlabel(xlabel, fontsize=12)
         ax.set_ylabel("Third Party Actors", fontsize=12)
-        ax.set_title(f"Third Party Signatories in {selected_pp()}", fontsize=14, fontweight='bold')
+        ax.set_title(get_chart_title("pp_custom_title_third", "", "", "Third Party Signatories in"), fontsize=14, fontweight='bold')
 
         # --- Add xlim for extra space on right side ---
         max_val = max(y_vals)
@@ -1339,7 +1388,7 @@ def server(input, output, session):
             bars = ax.barh(topics_sorted['category'], topics_sorted['count'], color='#091f40')
             ax.set_xlabel('Number of Agreements', fontsize=12)
             ax.set_ylabel('Topic Category', fontsize=12)
-            ax.set_title('Topic Categories in Peace Process', fontsize=14, fontweight='bold')
+            ax.set_title(get_chart_title("pp_custom_title_topics", "in Peace Process"), fontsize=14, fontweight='bold')
             
             # Add value labels
             for bar in bars:
@@ -1660,7 +1709,7 @@ def server(input, output, session):
             ax.set_yticklabels(sorted_actors, fontsize=10)
             ax.set_ylabel("Actors (in order of first appearance)", fontsize=12)
             ax.set_title(
-                f"{diffusion_type.capitalize()} Diffusion Over Time",
+                get_chart_title("pp_custom_title_diffusion", f"Diffusion Over Time", f"({diffusion_type.capitalize()})"),
                 fontsize=16, fontweight="bold", y=1.05,
             )
 
@@ -1926,7 +1975,7 @@ def server(input, output, session):
     def pp_export_time_csv():
         try:
             df = pp_agreements_time_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -1949,7 +1998,7 @@ def server(input, output, session):
     def pp_export_stage_csv():
         try:
             df = pp_stage_analysis_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             return io.BytesIO(b"Error,Message\nExport Failed,Please try again")
@@ -1991,31 +2040,31 @@ def server(input, output, session):
             # Combine party and third party data
             party_df = sig_data["party"].copy()
             third_party_df = sig_data["third_party"].copy()
-            
+
             if not party_df.empty:
                 party_df["signatory_type"] = "party"
             if not third_party_df.empty:
                 third_party_df["signatory_type"] = "third_party"
-            
+
             combined_df = pd.concat([party_df, third_party_df], ignore_index=True)
-            csv_string = combined_df.to_csv(index=False)
+            csv_string = combined_df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
             return io.BytesIO(b"Error,Message\nExport Failed,Please try again")
     
-    #third party signatories csv export   
+    #third party signatories csv export
     @output
     @render.download(filename="pp_third_party_signatories.csv")
     def pp_export_third_party_sig_csv():
         try:
             sig_data = pp_signatories_data()
             third_party_df = sig_data["third_party"].copy()
-            
+
             if not third_party_df.empty:
                 third_party_df["signatory_type"] = "third_party"
-            
-            csv_string = third_party_df.to_csv(index=False)
+
+            csv_string = third_party_df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             return io.BytesIO(b"Error,Message\nExport Failed,Please try again")
@@ -2026,7 +2075,7 @@ def server(input, output, session):
     def pp_export_topic_categories_csv():
         try:
             df = pp_topics_category_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -2037,7 +2086,7 @@ def server(input, output, session):
     def pp_export_topic_subissues_csv():
         try:
             df = pp_topics_subissue_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -2049,7 +2098,7 @@ def server(input, output, session):
     def pp_export_topic_issues_csv():
         try:
             df = pp_topics_issue_data()
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             return io.BytesIO(b"Error,Message\nExport Failed,Please try again")
@@ -2077,14 +2126,14 @@ def server(input, output, session):
         try:
             data = filtered_pp_data()
             signatories = data["signatories"]
-            
+
             if signatories.empty:
                 return io.BytesIO(b"No signatory data available")
-            
+
             # Export the actor-agreement relationships
             unique_actor_agreements = signatories.drop_duplicates(['AgtId', 'actor_name'])
             export_data = unique_actor_agreements[['AgtId', 'actor_name']].copy()
-            csv_string = export_data.to_csv(index=False)
+            csv_string = export_data.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")
@@ -2128,7 +2177,7 @@ def server(input, output, session):
             else:
                 df = pd.DataFrame(diffusion_data["topics"])
             
-            csv_string = df.to_csv(index=False)
+            csv_string = df.to_csv(index=False, encoding="utf-8")
             return io.BytesIO(csv_string.encode('utf-8'))
         except Exception as e:
             print(f"Error in CSV export: {e}")

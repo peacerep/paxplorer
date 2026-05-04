@@ -1058,7 +1058,7 @@ def server(input, output, session):
         else:
             export_data = pd.DataFrame(columns=['ISO_Code', 'Country_Name', 'Number_of_Agreements', 'Latitude', 'Longitude'])
         
-        csv_string = export_data.to_csv(index=False)
+        csv_string = export_data.to_csv(index=False, encoding="utf-8")
         return io.BytesIO(csv_string.encode('utf-8'))
 
 
@@ -2162,34 +2162,34 @@ def server(input, output, session):
 
     # CSVs (unchanged)
     @render.download(filename="topics_over_time.csv")
-    def topics_export_time_csv(): return io.BytesIO(topics_time_data().to_csv(index=False).encode())
+    def topics_export_time_csv(): return io.BytesIO(topics_time_data().to_csv(index=False, encoding="utf-8").encode())
 
     @render.download(filename="topics_grouped_over_time.csv")
-    def topics_export_grouped_time_csv(): return io.BytesIO(topics_grouped_time_data().to_csv(index=False).encode())
+    def topics_export_grouped_time_csv(): return io.BytesIO(topics_grouped_time_data().to_csv(index=False, encoding="utf-8").encode())
 
     @render.download(filename="topics_stage.csv")
-    def topics_export_stage_csv(): return io.BytesIO(topics_stage_data().to_csv(index=False).encode())
+    def topics_export_stage_csv(): return io.BytesIO(topics_stage_data().to_csv(index=False, encoding="utf-8").encode())
 
     @render.download(filename="topics_peace_process.csv")
     def topics_export_pp_csv():
-        return io.BytesIO(topics_peace_process_general_data().to_csv(index=False).encode())
+        return io.BytesIO(topics_peace_process_general_data().to_csv(index=False, encoding="utf-8").encode())
     
     @render.download(filename="topics_single_topic_peace_process.csv")
     def topics_export_single_topic_pp_csv():
-        return io.BytesIO(topics_peace_process_data().to_csv(index=False).encode())
+        return io.BytesIO(topics_peace_process_data().to_csv(index=False, encoding="utf-8").encode())
 
     # @render.download(filename="topics_actors.csv")
     # def topics_export_actors_csv(): return io.BytesIO(topics_actor_data().to_csv(index=False).encode())
     @render.download(filename="topics_party_actors.csv")
     def topics_export_party_actors_csv():
         df = topics_actor_split_data()["party"]
-        csv = df.to_csv(index=False)
+        csv = df.to_csv(index=False, encoding="utf-8")
         return io.BytesIO(csv.encode("utf-8"))
 
     @render.download(filename="topics_third_actors.csv")
     def topics_export_third_actors_csv():
         df = topics_actor_split_data()["third"]
-        csv = df.to_csv(index=False)
+        csv = df.to_csv(index=False, encoding="utf-8")
         return io.BytesIO(csv.encode("utf-8"))
     #new diffusion chart download
     @render.download(filename="topic_diffusion.png")
@@ -2210,7 +2210,7 @@ def server(input, output, session):
             return io.BytesIO(b"")  # empty CSV fallback
 
         buf = io.StringIO()
-        df.to_csv(buf, index=False)
+        df.to_csv(buf, index=False, encoding="utf-8")
         buf.seek(0)
         return buf
     #exporters for the mention not mention diffusion - remove if do not want in app
@@ -2229,6 +2229,6 @@ def server(input, output, session):
     def topic_diffusion_all_csv():
         df = topic_diffusion_all_data()
         buf = io.StringIO()
-        df.to_csv(buf, index=False)
+        df.to_csv(buf, index=False, encoding="utf-8")
         buf.seek(0)
         return buf

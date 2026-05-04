@@ -244,16 +244,29 @@ layout = ui.nav_panel(
                     ),
                     ui.output_plot("actors_over_time", height="650px", fill=False),
                     ui.div(
-                        ui.download_button(
-                            "actors_over_time_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_over_time_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_over_time_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_over_time_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_over_time",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 28px;",
@@ -274,16 +287,29 @@ layout = ui.nav_panel(
 
                     ui.output_plot("actors_agreement_type_pie"),
                     ui.div(
-                        ui.download_button(
-                            "actors_agreement_type_pie_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_agreement_type_pie_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_agreement_type_pie_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_agreement_type_pie_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_pie",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 40px;",
@@ -310,16 +336,29 @@ layout = ui.nav_panel(
                     ),
                     ui.output_plot("actors_by_stage", height="700px", fill=False),
                     ui.div(
-                        ui.download_button(
-                            "actors_by_stage_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_by_stage_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_by_stage_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_by_stage_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_stage",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 28px;",
@@ -369,16 +408,29 @@ layout = ui.nav_panel(
                      ),
 
                     ui.div(
-                        ui.download_button(
-                            "actors_peace_process_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_peace_process_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_peace_process_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_peace_process_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_pp",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 28px;",
@@ -412,34 +464,61 @@ layout = ui.nav_panel(
                         class_="mb-3",
                     ),
                     ui.div(
-                        ui.download_button(
-                            "actors_party_cosign_png",
-                            "Export Party PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_party_cosign_png",
+                                "Export Party PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_party_cosign_csv",
+                                "Export Party CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_party_cosign_csv",
-                            "Export Party CSV",
-                            class_="btn btn-outline-secondary btn-sm me-3",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_party",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
-                    ui.hr(),
+                        style="display:flex; align-items:center; gap:16px;",
+                        class_="mb-4",
                     ),
+                    ui.hr(),
                     ui.div(
                         ui.h4("Third-Party Co-signatories", class_="mb-2"),
                         ui.output_plot("actors_third_cosign", height="650px"),
                         class_="mb-3",
                     ),
                     ui.div(
-                        ui.download_button(
-                            "actors_third_cosign_png",
-                            "Export Third PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_third_cosign_png",
+                                "Export Third PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_third_cosign_csv",
+                                "Export Third CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_third_cosign_csv",
-                            "Export Third CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_third",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 28px;",
@@ -479,16 +558,29 @@ layout = ui.nav_panel(
                             "overflow-y: auto;"
                         ),
                     ui.div(
-                        ui.download_button(
-                            "actors_topics_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_topics_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_topics_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_topics_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_topics",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     ui.hr(),
@@ -500,16 +592,29 @@ layout = ui.nav_panel(
                             "padding-top:5px; padding-bottom:15px;"
                         ),
                     ui.div(
-                        ui.download_button(
-                            "actors_topics_radial_png",
-                            "Export PNG",
-                            class_="btn btn-outline-primary btn-sm me-2",
+                        ui.div(
+                            ui.download_button(
+                                "actors_topics_radial_png",
+                                "Export PNG",
+                                class_="btn btn-outline-primary btn-sm me-2",
+                            ),
+                            ui.download_button(
+                                "actors_topics_radial_csv",
+                                "Export CSV",
+                                class_="btn btn-outline-secondary btn-sm",
+                            ),
+                            style="display:flex; gap:10px; align-items:center;"
                         ),
-                        ui.download_button(
-                            "actors_topics_radial_csv",
-                            "Export CSV",
-                            class_="btn btn-outline-secondary btn-sm",
+                        ui.div(
+                            ui.input_text(
+                                "actors_custom_title_radial",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
                         ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4",
                     ),
                     style="margin-bottom: 28px;",

@@ -96,8 +96,21 @@ layout = ui.nav_panel(
                 ui.output_plot("pp_agreements_over_time", height="725px")
             ),
             ui.div(
-                ui.download_button("pp_export_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
-                ui.download_button("pp_export_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                ui.div(
+                    ui.download_button("pp_export_time_png", "Export PNG", class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                    ui.download_button("pp_export_time_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                    style="display:flex; gap:10px; align-items:center;"
+                ),
+                ui.div(
+                    ui.input_text(
+                        "pp_custom_title_time",
+                        None,
+                        placeholder="Enter custom chart title…",
+                        width="320px",
+                    ),
+                    style="margin-left:auto;"
+                ),
+                style="display:flex; align-items:center; gap:16px;",
                 class_="mb-4"
             ),
         ),
@@ -119,10 +132,23 @@ layout = ui.nav_panel(
                     ),
                     ui.div(
                         ui.div(
-                            ui.download_button("pp_export_stage_png", "Download PNG",
-                                               class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
-                            ui.download_button("pp_export_stage_csv", "Download CSV",
-                                               class_="btn btn-outline-secondary btn-sm"),
+                            ui.div(
+                                ui.download_button("pp_export_stage_png", "Download PNG",
+                                                   class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                                ui.download_button("pp_export_stage_csv", "Download CSV",
+                                                   class_="btn btn-outline-secondary btn-sm"),
+                                style="display:flex; gap:10px; align-items:center;"
+                            ),
+                            ui.div(
+                                ui.input_text(
+                                    "pp_custom_title_stage",
+                                    None,
+                                    placeholder="Enter custom chart title…",
+                                    width="320px",
+                                ),
+                                style="margin-left:auto;"
+                            ),
+                            style="display:flex; align-items:center; gap:16px;",
                             class_="mb-4"
                         )
                     )
@@ -181,11 +207,23 @@ layout = ui.nav_panel(
                                 class_="plot-output"
                             ),
                             ui.div(
-                                ui.download_button("pp_export_party_sig_png", "Download PNG",
-                                                   class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
-                                ui.download_button("pp_export_sig_csv", "Download CSV",
-                                                   class_="btn btn-outline-secondary btn-sm"),
-                                style="margin-top: 15px;"
+                                ui.div(
+                                    ui.download_button("pp_export_party_sig_png", "Download PNG",
+                                                       class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                                    ui.download_button("pp_export_sig_csv", "Download CSV",
+                                                       class_="btn btn-outline-secondary btn-sm"),
+                                    style="display:flex; gap:10px; align-items:center;"
+                                ),
+                                ui.div(
+                                    ui.input_text(
+                                        "pp_custom_title_party",
+                                        None,
+                                        placeholder="Enter custom chart title…",
+                                        width="320px",
+                                    ),
+                                    style="margin-left:auto;"
+                                ),
+                                style="display:flex; align-items:center; gap:16px; margin-top: 15px;"
                             ),
                             style="margin-bottom: 15px;"
                         ),
@@ -198,11 +236,23 @@ layout = ui.nav_panel(
                                 class_="plot-output"
                             ),
                             ui.div(
-                                ui.download_button("pp_export_third_party_sig_png", "Download PNG",
-                                                   class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
-                                ui.download_button("pp_export_third_party_sig_csv", "Download CSV",
-                                                   class_="btn btn-outline-secondary btn-sm"),
-                                style="margin-top: 15px;"
+                                ui.div(
+                                    ui.download_button("pp_export_third_party_sig_png", "Download PNG",
+                                                       class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                                    ui.download_button("pp_export_third_party_sig_csv", "Download CSV",
+                                                       class_="btn btn-outline-secondary btn-sm"),
+                                    style="display:flex; gap:10px; align-items:center;"
+                                ),
+                                ui.div(
+                                    ui.input_text(
+                                        "pp_custom_title_third",
+                                        None,
+                                        placeholder="Enter custom chart title…",
+                                        width="320px",
+                                    ),
+                                    style="margin-left:auto;"
+                                ),
+                                style="display:flex; align-items:center; gap:16px; margin-top: 15px;"
                             )
                         )
                     )
@@ -231,10 +281,23 @@ layout = ui.nav_panel(
                 ),
                 ui.div(
                     ui.div(
-                        ui.download_button("pp_export_topic_issues_png", "Export PNG",
-                                           class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
-                        ui.download_button("pp_export_topic_issues_csv", "Export CSV",
-                                           class_="btn btn-outline-secondary btn-sm"),
+                        ui.div(
+                            ui.download_button("pp_export_topic_issues_png", "Export PNG",
+                                               class_="btn btn-outline-primary btn-sm me-2", style="margin-right: 10px;"),
+                            ui.download_button("pp_export_topic_issues_csv", "Export CSV",
+                                               class_="btn btn-outline-secondary btn-sm"),
+                            style="display:flex; gap:10px; align-items:center;"
+                        ),
+                        ui.div(
+                            ui.input_text(
+                                "pp_custom_title_topics",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
+                        ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4"
                     )
                 )
@@ -292,16 +355,28 @@ layout = ui.nav_panel(
                 ),
                 # === Export buttons ===
                 ui.div(
-                    ui.download_button(
-                        "pp_export_diffusion_png", "Export PNG",
-                        class_="btn btn-outline-primary btn-sm me-2",
-                        style="margin-right: 10px;"
+                    ui.div(
+                        ui.download_button(
+                            "pp_export_diffusion_png", "Export PNG",
+                            class_="btn btn-outline-primary btn-sm me-2",
+                            style="margin-right: 10px;"
+                        ),
+                        ui.download_button(
+                            "pp_export_diffusion_csv", "Export CSV",
+                            class_="btn btn-outline-secondary btn-sm"
+                        ),
+                        style="display:flex; gap:10px; align-items:center;"
                     ),
-                    ui.download_button(
-                        "pp_export_diffusion_csv", "Export CSV",
-                        class_="btn btn-outline-secondary btn-sm"
+                    ui.div(
+                        ui.input_text(
+                            "pp_custom_title_diffusion",
+                            None,
+                            placeholder="Enter custom chart title…",
+                            width="320px",
+                        ),
+                        style="margin-left:auto;"
                     ),
-                    style="margin-top: 10px;"
+                    style="display:flex; align-items:center; gap:16px; margin-top: 10px;"
                 ),
             ),
             style="padding: 20px; max-width: 100%; overflow-x: auto;"
