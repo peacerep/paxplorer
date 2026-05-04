@@ -3,6 +3,8 @@
 **PA-Xplorer** is an interactive Shiny for Python web application that allows researchers and practitioners to explore the **PA-X Peace Agreements Database**.  
 The app provides visual and downloadable summaries of peace agreements, processes, topics, and actors — enabling easy discovery, analysis, and export of trends in global peace data.
 
+**Live Dashboard:** https://peacerep.shinyapps.io/paxplorer/
+
 ---
 
 ## Features
