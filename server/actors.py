@@ -39,6 +39,8 @@ pax_topics = data["pax_topics"]
 pax_id_to_con = data["pax_id_to_con"]
 con_ent = data["con_ent"]
 signatories = data["signatories"].rename(columns={'stage_process': 'stage_label'})
+pax_wide = data["pax_wide"]
+wgg = data["wgg"]
 
 
 # Stage & type color maps
@@ -217,6 +219,78 @@ def server(input, output, session):
 
         return " | ".join(bits) if bits else "No filters applied"
 
+    def build_export_dataset(pax_wide, signatories, wgg, filtered_agt_ids, selected_actors, include_wgg=False):
+        """
+        Build export dataset with actor binary columns and actor lists.
+
+        Args:
+            pax_wide: Full agreement dataframe
+            signatories: Signatory relationships dataframe
+            wgg: WGG topics dataframe
+            filtered_agt_ids: Array of agreement IDs to include
+            selected_actors: List of selected actor names
+            include_wgg: Whether to merge WGG topics
+
+        Returns:
+            DataFrame ready for CSV export
+        """
+        # 1. Filter pax_wide by agreement IDs
+        export_df = pax_wide[pax_wide["AgtId"].isin(filtered_agt_ids)].copy()
+
+        # 2. For each selected actor, create binary column
+        for actor in selected_actors:
+            # Get abbreviation for this actor
+            actor_rows = signatories[signatories["actor_name"] == actor]
+            if not actor_rows.empty:
+                actor_abbrev = actor_rows["abbreviation"].iloc[0]
+                if pd.isna(actor_abbrev):
+                    actor_abbrev = actor.replace(" ", "_").lower()
+                else:
+                    actor_abbrev = str(actor_abbrev).lower()
+            else:
+                actor_abbrev = actor.replace(" ", "_").lower()
+
+            # Get all AgtIds where this actor signed
+            actor_agt_ids = signatories[signatories["actor_name"] == actor]["AgtId"].unique()
+
+            # Create clean column name
+            col_name = f"signed_by_{actor_abbrev.replace(' ', '_').replace('-', '_')}"
+
+            # Add binary column
+            export_df[col_name] = export_df["AgtId"].isin(actor_agt_ids).astype(int)
+
+        # 3. Add actor list columns
+        # Pre-group signatories by AgtId and signatory_type for efficiency
+        sig_grouped = signatories.groupby("AgtId")
+
+        party_sigs = {}
+        third_party_sigs = {}
+
+        for agt_id, group in sig_grouped:
+            # Separate by signatory type
+            parties = group[group["signatory_type"] == "party"]["actor_name"].unique()
+            third_parties = group[group["signatory_type"] == "third party"]["actor_name"].unique()
+
+            party_sigs[agt_id] = "; ".join(sorted([str(x) for x in parties if pd.notna(x)]))
+            third_party_sigs[agt_id] = "; ".join(sorted([str(x) for x in third_parties if pd.notna(x)]))
+
+        # Map to export_df
+        export_df["party_signatories"] = export_df["AgtId"].map(party_sigs).fillna("")
+        export_df["third_party_signatories"] = export_df["AgtId"].map(third_party_sigs).fillna("")
+
+        # 4. Optional: merge WGG
+        if include_wgg:
+            wgg_filtered = wgg[wgg["AgtId"].isin(filtered_agt_ids)].copy()
+
+            # Identify duplicate columns to drop from wgg
+            dup_cols = [col for col in wgg_filtered.columns if col in export_df.columns and col != "AgtId"]
+            if dup_cols:
+                wgg_filtered = wgg_filtered.drop(columns=dup_cols)
+
+            # Merge on AgtId
+            export_df = export_df.merge(wgg_filtered, on="AgtId", how="left")
+
+        return export_df
 
     # -------------------------------------------------------
     #  ACTOR SELECTION LOGIC (MULTI + HIERARCHY)
@@ -509,6 +583,68 @@ def server(input, output, session):
 
         selected_ids = sig["AgtId"].unique()
         return df[df["AgtId"].isin(selected_ids)]
+
+    # -------------------------------------------------------
+    #  DATA EXPORT
+    # -------------------------------------------------------
+    @reactive.calc
+    def export_dataset():
+        """Build the full export dataset with actor flags and optional WGG."""
+        filtered_ids = filtered_agreements()["AgtId"].unique() if not filtered_agreements().empty else []
+        selected_actors = input.actors_selected() or []
+        if isinstance(selected_actors, tuple):
+            selected_actors = list(selected_actors)
+        elif isinstance(selected_actors, str):
+            selected_actors = [selected_actors]
+
+        include_wgg = input.export_include_wgg()
+
+        return build_export_dataset(
+            pax_wide=pax_wide,
+            signatories=signatories,
+            wgg=wgg,
+            filtered_agt_ids=filtered_ids,
+            selected_actors=selected_actors,
+            include_wgg=include_wgg
+        )
+
+    @output
+    @render.download(filename="pa_x_export.csv")
+    def export_pa_x_csv():
+        df = export_dataset()
+        csv_bytes = df.to_csv(index=False).encode("utf-8")
+        return BytesIO(csv_bytes)
+
+    # Preview toggle
+    show_preview = reactive.value(False)
+
+    @reactive.effect
+    @reactive.event(input.preview_export_btn)
+    def trigger_preview():
+        """Toggle preview visibility when button clicked."""
+        show_preview.set(not show_preview())
+
+    @render.ui
+    def export_preview_section():
+        """Render preview table if user clicked preview button."""
+        if not show_preview():
+            return ui.div()  # empty
+
+        df = export_dataset()
+        if df.empty:
+            return ui.div(ui.p("No data to preview.", class_="text-muted"))
+
+        # Show head(50) to avoid performance issues
+        preview_df = df.head(50)
+
+        # Render as HTML table
+        html_table = preview_df.to_html(index=False, classes="table table-sm table-striped")
+        return ui.div(
+            ui.h4("Export Preview (first 50 rows)", class_="mt-4"),
+            ui.HTML(html_table),
+            ui.p(f"Total rows: {len(df)}", class_="text-muted mt-2"),
+            style="overflow-x: auto; margin-bottom: 28px;"
+        )
 
     # -------------------------------------------------------
     #  RESET + SUMMARY

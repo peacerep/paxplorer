@@ -518,6 +518,29 @@ layout = ui.nav_panel(
 
                 ui.hr(),
 
+                # Data Export section
+                ui.div(
+                    ui.h2("Data Export", class_="mb-2"),
+                    ui.p("Export wide PA-X agreement data with optional actor signature flags", class_="text-muted mb-3"),
+
+                    # Checkbox for WGG inclusion
+                    ui.input_checkbox("export_include_wgg", "Include WGG topics", value=False),
+
+                    # Buttons
+                    ui.div(
+                        ui.download_button("export_pa_x_csv", "Export PA-X CSV with selected actor flags", class_="btn btn-outline-primary btn-sm me-2"),
+                        ui.input_action_button("preview_export_btn", "Preview export data", class_="btn btn-outline-secondary btn-sm"),
+                        class_="mb-4",
+                    ),
+
+                    # Preview section (populated on button click)
+                    ui.output_ui("export_preview_section"),
+
+                    style="margin-bottom: 28px;",
+                ),
+
+                ui.hr(),
+
                 # Bottom table
                 ui.div(
                     ui.h2("Agreements Table", class_="mb-2"),
