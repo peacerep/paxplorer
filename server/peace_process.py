@@ -282,22 +282,70 @@ def server(input, output, session):
     
     @reactive.effect
     def _():
-        """Populate all UI controls with choices"""
+        """Populate all UI controls with choices without wiping valid selections."""
         peace_processes = peace_process_choices()
         agt_types = pp_agt_type_choices()
         stages = pp_stage_choices()
         year_min, year_max = pp_year_range()
         date_min, date_max = pp_date_range()
-        
-        # Update all controls
-        ui.update_selectize("selected_peace_process", 
-                          choices=peace_processes, 
-                          selected=peace_processes[0] if peace_processes else None)
-        ui.update_selectize("pp_agt_type", choices=agt_types, selected=[])
-        ui.update_selectize("pp_stage", choices=stages, selected=[])
-        ui.update_slider("pp_year_range", min=year_min, max=year_max, value=[year_min, year_max])
+
+        if input.pp_exclude_local_analysis():
+            agt_types = [t for t in agt_types if t != "Local"]
+
+        with reactive.isolate():
+            selected_peace_process = input.selected_peace_process()
+            if selected_peace_process not in peace_processes:
+                selected_peace_process = peace_processes[0] if peace_processes else None
+
+            selected_agt_types = input.pp_agt_type() or []
+            if isinstance(selected_agt_types, str):
+                selected_agt_types = [selected_agt_types]
+            selected_agt_types = [x for x in selected_agt_types if x in agt_types]
+
+            selected_stages = input.pp_stage() or []
+            if isinstance(selected_stages, str):
+                selected_stages = [selected_stages]
+            selected_stages = [x for x in selected_stages if x in stages]
+
+            current_year_range = input.pp_year_range() or [year_min, year_max]
+            current_year_range = [
+                max(year_min, current_year_range[0]),
+                min(year_max, current_year_range[1]),
+            ]
+
+            current_date_range = input.pp_date_range()
+
+            if date_min and date_max:
+                if current_date_range and len(current_date_range) == 2:
+                    start_date = current_date_range[0] or date_min
+                    end_date = current_date_range[1] or date_max
+                else:
+                    start_date, end_date = date_min, date_max
+
+                start_date = pd.to_datetime(start_date).date()
+                end_date = pd.to_datetime(end_date).date()
+                date_min_clamped = pd.to_datetime(date_min).date()
+                date_max_clamped = pd.to_datetime(date_max).date()
+
+                start_date = max(start_date, date_min_clamped)
+                end_date = min(end_date, date_max_clamped)
+
+                if start_date > end_date:
+                    start_date, end_date = date_min_clamped, date_max_clamped
+            else:
+                start_date, end_date = None, None
+
+        ui.update_selectize(
+            "selected_peace_process",
+            choices=peace_processes,
+            selected=selected_peace_process
+        )
+        ui.update_selectize("pp_agt_type", choices=agt_types, selected=selected_agt_types)
+        ui.update_selectize("pp_stage", choices=stages, selected=selected_stages)
+        ui.update_slider("pp_year_range", min=year_min, max=year_max, value=current_year_range)
+
         if date_min and date_max:
-            ui.update_date_range("pp_date_range", start=date_min, end=date_max)
+            ui.update_date_range("pp_date_range", start=start_date, end=end_date)
     
     # =========================================================================
     # FILTERED DATA - Apply all selected filters
@@ -336,6 +384,9 @@ def server(input, output, session):
             if isinstance(selected_types, str):
                 selected_types = [selected_types]
             df = df[df["agt_type"].isin(selected_types)]
+
+        if input.pp_exclude_local_analysis():
+            df = df[df["agt_type"] != "Local"]
         
         # Filter by year range
         year_range_vals = input.pp_year_range()
@@ -413,6 +464,9 @@ def server(input, output, session):
             if len(stages) > 3:
                 text = f"Stages: {', '.join(stages[:3])} + {len(stages)-3} more"
             filters.append(text)
+        
+        if input.pp_exclude_local_analysis():
+            filters.append("Excludes Local agreements")
 
         return filters
     
@@ -449,6 +503,9 @@ def server(input, output, session):
         stages = input.pp_stage()
         if stages and len(stages) > 0:
             filters.append(f"Stages = {', '.join(stages)}")
+
+        if input.pp_exclude_local_analysis():
+            filters.append("Excludes Local agreements")
         
         return filters
     
@@ -492,7 +549,11 @@ def server(input, output, session):
     def pp_filter_summary():
         """Display filter summary statistics"""
         data = load_pax_data()
-        total_agreements = data["pax"]["AgtId"].nunique()
+        baseline = data["pax"].copy()
+        if input.pp_exclude_local_analysis():
+            baseline = baseline[baseline["agt_type"] != "Local"]
+
+        total_agreements = baseline["AgtId"].nunique()
         
         filtered_data_result = filtered_pp_data()
         filtered_agreements = filtered_data_result["pax"]["AgtId"].nunique()
@@ -536,6 +597,7 @@ def server(input, output, session):
         ui.update_slider("pp_year_range", value=[year_min, year_max])
         if date_min and date_max:
             ui.update_date_range("pp_date_range", start=date_min, end=date_max)
+        ui.update_checkbox("pp_exclude_local_analysis", value=False)
     
     # =========================================================================
     # SUMMARY STATISTICS
@@ -779,10 +841,13 @@ def server(input, output, session):
         
         # Calculate stage distributions for both filtered and all data
         filtered_stage_data = df.groupby("stage_label")["AgtId"].nunique().reset_index(name="filtered_count")
-        all_stage_data = all_data["pax"].groupby("stage_label")["AgtId"].nunique().reset_index(name="all_count")
-        
         total_filtered = df["AgtId"].nunique()
-        total_all = all_data["pax"]["AgtId"].nunique()
+        baseline = all_data["pax"].copy()
+        if input.pp_exclude_local_analysis():
+            baseline = baseline[baseline["agt_type"] != "Local"]
+
+        all_stage_data = baseline.groupby("stage_label")["AgtId"].nunique().reset_index(name="all_count")
+        total_all = baseline["AgtId"].nunique()     
         
         # Create a complete dataframe with all stages
         all_stages_df = pd.DataFrame({'stage_label': stage_order})
@@ -791,8 +856,16 @@ def server(input, output, session):
         stage_data = all_stages_df.merge(filtered_stage_data, on="stage_label", how="left").fillna(0)
         stage_data = stage_data.merge(all_stage_data, on="stage_label", how="left").fillna(0)
         
-        stage_data["filtered_percentage"] = (stage_data["filtered_count"] / total_filtered * 100) if total_filtered > 0 else 0
-        stage_data["all_percentage"] = (stage_data["all_count"] / total_all * 100) if total_all > 0 else 0
+        stage_data["filtered_percentage"] = np.where(
+            total_filtered > 0,
+            stage_data["filtered_count"] / total_filtered * 100,
+            0
+        )
+        stage_data["all_percentage"] = np.where(
+            total_all > 0,
+            stage_data["all_count"] / total_all * 100,
+            0
+        )
         
         return stage_data
     

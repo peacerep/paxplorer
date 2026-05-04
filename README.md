@@ -37,6 +37,6 @@ Developed for the PA-X Team - PeaceRep at the University of Edinburgh Law School
 For any questions, concerns, contributions - reach out to nhenry2@ed.ac.uk
 
 ## License
-This project is for research and educational use. Contact the maintainers for reuse or redistribution permissions.
+This project is for research and educational use. Contact the maintainers for reuse or redistribution permissions (nhenry2@ed.ac.uk).
 © 2025 PA-X Research Team.
 Terms of use: please leave citation and branding in exported png plots.

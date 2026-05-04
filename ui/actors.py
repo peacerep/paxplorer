@@ -81,8 +81,7 @@ layout = ui.nav_panel(
                     "The filters in the sidebar will filter the agreements actors can be signatories to. ",
                     ui.tags.strong("Please note, this data excludes local agreements in PA-X."),
                     ui.br(), ui.br(),
-                    "Please cite the signatory data as:",
-                    ui.br(),
+                    "This is version 0.3 of the dataset, which includes all non-local agreements in PA-X V10. If you want to use this data, please cite using the doi:",                   ui.br(),
                     style="margin-bottom: 10px; font-size: 1em; color: #333;"
                 ),
                 ui.p(

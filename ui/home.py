@@ -7,6 +7,11 @@ layout = ui.nav_panel(
         # Sidebar section
         ui.sidebar(
             ui.h4("Agreement Filters"),
+            ui.input_checkbox(
+                "exclude_local_analysis",
+                "Exclude Local agreements",
+                False
+            ),
             ui.input_selectize(
                 "region", 
                 "Select Region:", 
@@ -25,8 +30,8 @@ layout = ui.nav_panel(
                 "year_range",
                 "Year Range:",
                 min=1990,
-                max=2024,
-                value=[1990, 2024],
+                max=2025,
+                value=[1990, 2025],
                 step=1,
                 sep=""
             ),            
@@ -51,6 +56,7 @@ layout = ui.nav_panel(
                 multiple=True,
                 options={"placeholder": "All agreement types"}
             ),
+            
             #ui.input_checkbox("show_labels", "Show Data Labels", True),
             ui.input_action_button("reset_filters", "Reset Filters", class_="btn btn-secondary"),
             ui.hr(),
@@ -82,7 +88,7 @@ layout = ui.nav_panel(
                 ),
                 ui.p(
                     "On this page you can look at trends in peace agreements since 1990. "
-                    "The default view of charts show all agreements from version 9 of the PA-X Peace Agreements Database. The agreements can be filtered using the filters in the sidebar. "
+                    "The default view of charts show all agreements from version 10 of the PA-X Peace Agreements Database. The agreements can be filtered using the filters in the sidebar. "
                     "Please cite the data as shown below, and we kindly ask if you do not remove our branding in the images when using exported charts:" ,
                     style="margin-bottom: 10px; font-size: 1em; color: #333;"
                 ),

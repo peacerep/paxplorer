@@ -6,8 +6,13 @@ layout = ui.nav_panel(
         # Sidebar section - matching home page structure
         ui.sidebar(
             ui.h4("Agreement Filters"),
+            ui.input_checkbox(
+                "pp_exclude_local_analysis",
+                "Exclude Local agreements",
+                False
+            ),
             ui.input_date_range("pp_date_range", "Date Range:", start=None, end=None),
-            ui.input_slider("pp_year_range", "Year Range:", min=1990, max=2024, value=[1990, 2024], step=1, sep=""),
+            ui.input_slider("pp_year_range", "Year Range:", min=1990, max=2025, value=[1990, 2025], step=1, sep=""),
             ui.input_selectize("pp_stage", "Select Stages:", choices=[], multiple=True, options={"placeholder": "All stages"}),
             ui.input_selectize("pp_agt_type", "Select Agreement Type:", choices=[], multiple=True, options={"placeholder": "All agreement types"}),
             ui.input_checkbox("pp_show_labels", "Show Data Labels", True),
@@ -130,8 +135,11 @@ layout = ui.nav_panel(
             ui.h2("Messy Timeline", style="margin-bottom: 15px;"),
             ui.div(
                 ui.p(
-                    "This shows the trajectory of the peace process, if following the expected order of stages. "
-                    "View the visualization in full screen and explore other processes: https://www.peaceagreements.org/visualizations/messy-peace-processes/"
+                    "This shows the trajectory of the peace process, if following the expected order of stages. Click an agreement to see in PA-X."
+                    "View the visualization in full screen and explore other processes:",
+                    ui.HTML(
+                        '<a href="https://www.peaceagreements.org/visualizations/messy-peace-processes/" target="_blank">PA-X Messy Timeline</a>.'
+                    ), 
                 ),
                 ui.p(
                     "Example use: explore to see if any process follows the 'ideal' trajectory of negotiations.",

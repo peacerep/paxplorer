@@ -130,7 +130,9 @@ def server(input, output, session):
 
         # --- Explicitly selected actor names ---
         names = input.actors_selected() or []
-        if isinstance(names, str):
+        if isinstance(names, tuple):
+            names = list(names)
+        elif isinstance(names, str):
             names = [names]
         if names:
             show = names[:3]
@@ -140,7 +142,9 @@ def server(input, output, session):
 
         # --- Type/subtype combos ---
         combos = input.actors_type_combo() or []
-        if isinstance(combos, str):
+        if isinstance(combos, tuple):
+            combos = list(combos)
+        elif isinstance(combos, str):
             combos = [combos]
         if combos:
             show = combos[:3]
@@ -150,6 +154,10 @@ def server(input, output, session):
 
                 # --- Actor Type selections ---
         selected_combos = input.actors_type_combo() or []
+        if isinstance(selected_combos, tuple):
+            selected_combos = list(selected_combos)
+        elif isinstance(selected_combos, str):
+            selected_combos = [selected_combos]
         if selected_combos:
             matching_actors_type = []
             for combo in selected_combos:
@@ -175,6 +183,10 @@ def server(input, output, session):
 
         # --- UN Type selections ---
         selected_un_types = input.actors_un_type() or []
+        if isinstance(selected_un_types, tuple):
+            selected_un_types = list(selected_un_types)
+        elif isinstance(selected_un_types, str):
+            selected_un_types = [selected_un_types]
         if selected_un_types:
             matching_actors = (
                 signatories[signatories["un_type"].isin(selected_un_types)]["actor_name"]
@@ -264,12 +276,20 @@ def server(input, output, session):
 
         # Apply flags first (should work in isolation too)
         flags = input.actors_flags() or []
+        if isinstance(flags, tuple):
+            flags = list(flags)
+        elif isinstance(flags, str):
+            flags = [flags]
         for col in ["international", "regional", "women", "practical_third"]:
             if col in df.columns and col in flags:
                 # accept truthy (1/"1"/True)
                 df = df[df[col].fillna(0).astype(int) == 1]
 
         combos = input.actors_type_combo() or []
+        if isinstance(combos, tuple):
+            combos = list(combos)
+        elif isinstance(combos, str):
+            combos = [combos]
         if isinstance(combos, str):
             combos = [combos]
 
@@ -329,13 +349,51 @@ def server(input, output, session):
 
     @reactive.effect
     def populate_general_filters():
-        ui.update_selectize("actors_region", choices=region_choices(), selected=[])
-        ui.update_selectize("actors_country", choices=country_choices(), selected=[])
-        ui.update_selectize("actors_agt_type", choices=agt_type_choices(), selected=[])
-        ui.update_selectize("actors_peace_process", choices=peace_process_choices(), selected=[])
-        ui.update_selectize("actors_stage", choices=stage_choices(), selected=[])
-        yr = year_range()
-        ui.update_slider("actors_year_range", min=yr[0], max=yr[1], value=yr)
+        regions = region_choices()
+        countries = country_choices()
+        agt_types = agt_type_choices()
+        peace_processes = peace_process_choices()
+        stages = stage_choices()
+        yr_min, yr_max = year_range()
+
+        with reactive.isolate():
+            selected_region = input.actors_region() or []
+            if isinstance(selected_region, str):
+                selected_region = [selected_region]
+            selected_region = [x for x in selected_region if x in regions]
+
+            selected_country = input.actors_country() or []
+            if isinstance(selected_country, str):
+                selected_country = [selected_country]
+            selected_country = [x for x in selected_country if x in countries]
+
+            selected_agt_type = input.actors_agt_type() or []
+            if isinstance(selected_agt_type, str):
+                selected_agt_type = [selected_agt_type]
+            selected_agt_type = [x for x in selected_agt_type if x in agt_types]
+
+            selected_peace_process = input.actors_peace_process() or []
+            if isinstance(selected_peace_process, str):
+                selected_peace_process = [selected_peace_process]
+            selected_peace_process = [x for x in selected_peace_process if x in peace_processes]
+
+            selected_stage = input.actors_stage() or []
+            if isinstance(selected_stage, str):
+                selected_stage = [selected_stage]
+            selected_stage = [x for x in selected_stage if x in stages]
+
+            current_year_range = input.actors_year_range() or [yr_min, yr_max]
+            current_year_range = [
+                max(yr_min, current_year_range[0]),
+                min(yr_max, current_year_range[1]),
+            ]
+
+        ui.update_selectize("actors_region", choices=regions, selected=selected_region)
+        ui.update_selectize("actors_country", choices=countries, selected=selected_country)
+        ui.update_selectize("actors_agt_type", choices=agt_types, selected=selected_agt_type)
+        ui.update_selectize("actors_peace_process", choices=peace_processes, selected=selected_peace_process)
+        ui.update_selectize("actors_stage", choices=stages, selected=selected_stage)
+        ui.update_slider("actors_year_range", min=yr_min, max=yr_max, value=current_year_range)
 
     # -------------------------------------------------------
     #  DATA FILTERING PIPELINE
@@ -387,6 +445,10 @@ def server(input, output, session):
         # Start with all signatories; apply flags first
         sig = signatories.copy()
         flags = input.actors_flags() or []
+        if isinstance(flags, tuple):
+            flags = list(flags)
+        elif isinstance(flags, str):
+            flags = [flags]
         for col in ["international", "regional", "women"]:
             if col in sig.columns and col in flags:
                 sig[col] = sig[col].fillna(0).astype(int)
@@ -397,13 +459,19 @@ def server(input, output, session):
 
         # --- UN Type filter (moved here to align with actor-based logic) ---
         selected_un_types = input.actors_un_type() or []
+        if isinstance(selected_un_types, tuple):
+            selected_un_types = list(selected_un_types)
+        elif isinstance(selected_un_types, str):
+            selected_un_types = [selected_un_types]
         if selected_un_types:
             sig = sig[sig["un_type"].isin(selected_un_types)]
 
 
         # Type/sub/CS combos (multi)
         combos = input.actors_type_combo() or []
-        if isinstance(combos, str):
+        if isinstance(combos, tuple):
+            combos = list(combos)
+        elif isinstance(combos, str):
             combos = [combos]
         if combos:
             mask = pd.Series(False, index=sig.index)
@@ -425,7 +493,9 @@ def server(input, output, session):
 
         # Actor names (multi)
         names = input.actors_selected() or []
-        if isinstance(names, str):
+        if isinstance(names, tuple):
+            names = list(names)
+        elif isinstance(names, str):
             names = [names]
         if names:
             sig = sig[sig["actor_name"].isin(names)]
@@ -484,6 +554,10 @@ def server(input, output, session):
 
         # --- UN Type selections overview ---
         selected_un_types = input.actors_un_type() or []
+        if isinstance(selected_un_types, tuple):
+            selected_un_types = list(selected_un_types)
+        elif isinstance(selected_un_types, str):
+            selected_un_types = [selected_un_types]
         un_type_actors_text = None
 
         if selected_un_types:
@@ -505,6 +579,10 @@ def server(input, output, session):
         
         # --- Actor Type selections overview ---
         selected_combos = input.actors_type_combo() or []
+        if isinstance(selected_combos, tuple):
+            selected_combos = list(selected_combos)
+        elif isinstance(selected_combos, str):
+            selected_combos = [selected_combos]
         actor_type_text = None
 
         if selected_combos:
@@ -541,7 +619,9 @@ def server(input, output, session):
 
         # selected names (for display)
         names = input.actors_selected() or []
-        if isinstance(names, str):
+        if isinstance(names, tuple):
+            names = list(names)
+        elif isinstance(names, str):
             names = [names]
 
         # build first line (actors or type-combos)
@@ -553,7 +633,9 @@ def server(input, output, session):
             display.append(" | ".join(shown))
         else:
             combos = input.actors_type_combo() or []
-            if isinstance(combos, str):
+            if isinstance(combos, tuple):
+                combos = list(combos)
+            elif isinstance(combos, str):
                 combos = [combos]
             if combos:
                 shown = combos[:3]
@@ -571,6 +653,10 @@ def server(input, output, session):
 
             # apply attribute flags
             flags_current = input.actors_flags() or []
+            if isinstance(flags_current, tuple):
+                flags_current = list(flags_current)
+            elif isinstance(flags_current, str):
+                flags_current = [flags_current]
             for col in ["international", "regional", "women", "practical_third"]:
                 if col in sig.columns and col in flags_current:
                     sig[col] = sig[col].fillna(0).astype(int)
@@ -578,7 +664,9 @@ def server(input, output, session):
 
             # apply type-combo filters if any
             combos = input.actors_type_combo() or []
-            if isinstance(combos, str):
+            if isinstance(combos, tuple):
+                combos = list(combos)
+            elif isinstance(combos, str):
                 combos = [combos]
             if combos:
                 mask = pd.Series(False, index=sig.index)
@@ -602,6 +690,10 @@ def server(input, output, session):
 
         # attributes (checkbox flags) display
         flags = input.actors_flags() or []
+        if isinstance(flags, tuple):
+            flags = list(flags)
+        elif isinstance(flags, str):
+            flags = [flags]
         pretty = {
             "international": "International",
             "regional": "Regional",
@@ -672,11 +764,40 @@ def server(input, output, session):
         if df.empty:
             return pd.DataFrame(columns=["year", "agreements", "total", "percentage"])
 
-        yearly = df.groupby("year")["AgtId"].nunique().reset_index(name="agreements")
-        merged = signatory_year_totals.merge(yearly, on="year", how="left").fillna({"agreements": 0})
-        merged["percentage"] = merged["agreements"] / merged["total"] * 100
-        return merged[["year", "agreements", "total", "percentage"]]
+        yr = input.actors_year_range()
+        start_year, end_year = yr[0], yr[1]
 
+        year_frame = pd.DataFrame({
+            "year": list(range(start_year, end_year + 1))
+        })
+
+        yearly = (
+            df.groupby("year")["AgtId"]
+            .nunique()
+            .reset_index(name="agreements")
+        )
+
+        totals = (
+            signatory_year_totals[
+                (signatory_year_totals["year"] >= start_year) &
+                (signatory_year_totals["year"] <= end_year)
+            ]
+            .copy()
+        )
+
+        merged = year_frame.merge(totals, on="year", how="left")
+        merged = merged.merge(yearly, on="year", how="left")
+        merged = merged.fillna({"total": 0, "agreements": 0})
+        merged["total"] = merged["total"].astype(int)
+        merged["agreements"] = merged["agreements"].astype(int)
+        merged["percentage"] = np.where(
+            merged["total"] > 0,
+            merged["agreements"] / merged["total"] * 100,
+            0
+        )
+
+        return merged[["year", "agreements", "total", "percentage"]]
+    
     @reactive.calc
     def actors_stage_data():
         """
@@ -722,8 +843,16 @@ def server(input, output, session):
         out["count_selected"] = out["count_selected"].astype(int)
         out["count_all"] = out["count_all"].astype(int)
 
-        out["percentage_selected"] = out["count_selected"] / denom_sel * 100
-        out["percentage_all"] = out["count_all"] / denom_all * 100
+        out["percentage_selected"] = np.where(
+            denom_sel > 0,
+            out["count_selected"] / denom_sel * 100,
+            0
+        )
+        out["percentage_all"] = np.where(
+            denom_all > 0,
+            out["count_all"] / denom_all * 100,
+            0
+        )
 
         return out
 
@@ -736,7 +865,9 @@ def server(input, output, session):
             return {"party": pd.DataFrame(), "third": pd.DataFrame()}
 
         names = input.actors_selected() or []
-        if isinstance(names, str):
+        if isinstance(names, tuple):
+            names = list(names)
+        elif isinstance(names, str):
             names = [names]
 
         agt_ids = df["AgtId"].unique()
@@ -1503,7 +1634,9 @@ def server(input, output, session):
 
         # === DYNAMIC TITLE ===
         selected_actors = input.actors_selected() or []
-        if isinstance(selected_actors, str):
+        if isinstance(selected_actors, tuple):
+            selected_actors = list(selected_actors)
+        elif isinstance(selected_actors, str):
             selected_actors = [selected_actors]
         if selected_actors:
             actor_list = ", ".join(selected_actors)

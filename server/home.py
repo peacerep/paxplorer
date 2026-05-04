@@ -94,13 +94,48 @@ def server(input, output, session):
         peace_processes = peace_process_choices()
         stages = stage_choices()
         year_min, year_max = year_range()
-        
-        ui.update_selectize("country", choices=countries, selected=[])
-        ui.update_selectize("agt_type", choices=agt_types, selected=[])
-        ui.update_selectize("region", choices=regions, selected=[])
-        ui.update_selectize("peace_process", choices=peace_processes, selected=[])
-        ui.update_selectize("stage", choices=stages, selected=[])
-        ui.update_slider("year_range", min=year_min, max=year_max, value=[year_min, year_max])
+
+        if input.exclude_local_analysis():
+            agt_types = [t for t in agt_types if t != "Local"]
+
+        with reactive.isolate():
+            selected_country = input.country() or []
+            if isinstance(selected_country, str):
+                selected_country = [selected_country]
+            selected_country = [x for x in selected_country if x in countries]
+
+            selected_agt_type = input.agt_type() or []
+            if isinstance(selected_agt_type, str):
+                selected_agt_type = [selected_agt_type]
+            selected_agt_type = [x for x in selected_agt_type if x in agt_types]
+
+            selected_region = input.region() or []
+            if isinstance(selected_region, str):
+                selected_region = [selected_region]
+            selected_region = [x for x in selected_region if x in regions]
+
+            selected_peace_process = input.peace_process() or []
+            if isinstance(selected_peace_process, str):
+                selected_peace_process = [selected_peace_process]
+            selected_peace_process = [x for x in selected_peace_process if x in peace_processes]
+
+            selected_stage = input.stage() or []
+            if isinstance(selected_stage, str):
+                selected_stage = [selected_stage]
+            selected_stage = [x for x in selected_stage if x in stages]
+
+            current_year_range = input.year_range() or [year_min, year_max]
+            current_year_range = [
+                max(year_min, current_year_range[0]),
+                min(year_max, current_year_range[1]),
+            ]
+
+        ui.update_selectize("country", choices=countries, selected=selected_country)
+        ui.update_selectize("agt_type", choices=agt_types, selected=selected_agt_type)
+        ui.update_selectize("region", choices=regions, selected=selected_region)
+        ui.update_selectize("peace_process", choices=peace_processes, selected=selected_peace_process)
+        ui.update_selectize("stage", choices=stages, selected=selected_stage)
+        ui.update_slider("year_range", min=year_min, max=year_max, value=current_year_range)
 
     # Enhanced filtered_data function
     @reactive.calc
@@ -121,6 +156,9 @@ def server(input, output, session):
             if isinstance(selected_types, str):
                 selected_types = [selected_types]
             df = df[df["agt_type"].isin(selected_types)]
+        
+        if input.exclude_local_analysis():
+            df = df[df["agt_type"] != "Local"]
         
         # Filter by year range
         year_range_vals = input.year_range()
@@ -202,6 +240,9 @@ def server(input, output, session):
             if len(stages) > 3:
                 text = f"Stages: {', '.join(stages[:3])} + {len(stages)-3} more"
             filters.append(text)
+        
+        if input.exclude_local_analysis():
+            filters.append("Excludes Local agreements")
 
         return filters
 
@@ -242,6 +283,9 @@ def server(input, output, session):
         if stages and len(stages) > 0:
             filters.append(f"Stages = {', '.join(stages)}")
         
+        if input.exclude_local_analysis():
+            filters.append("Excludes Local agreements")
+        
         return filters
     
     # Display applied filters
@@ -274,7 +318,11 @@ def server(input, output, session):
     def filter_summary():
         filtered_df = filtered_data()
 
-        total_agreements = pax["AgtId"].nunique()
+        baseline = pax.copy()
+        if input.exclude_local_analysis():
+            baseline = baseline[baseline["agt_type"] != "Local"]
+
+        total_agreements = baseline["AgtId"].nunique()
         filtered_agreements = filtered_df["AgtId"].nunique()
         percentage = (filtered_agreements / total_agreements * 100) if total_agreements > 0 else 0
 
@@ -303,6 +351,7 @@ def server(input, output, session):
         ui.update_selectize("peace_process", selected=[])
         ui.update_selectize("stage", selected=[])
         ui.update_slider("year_range", value=[year_min, year_max])
+        ui.update_checkbox("exclude_local_analysis", value=False)
 
     # Function to get filter text for PNG annotations (FULL VERSION)
     @reactive.calc
@@ -322,18 +371,44 @@ def server(input, output, session):
     @reactive.calc
     def agreements_over_time_data():
         df = filtered_data()
-        yearly = df.groupby("year")["AgtId"].nunique().reset_index(name="agreements")
-        all_yearly = pax.groupby("year")["AgtId"].nunique().reset_index(name="total")
-        merged = all_yearly.merge(yearly, on="year", how="left").fillna(0)
-        
+
+        year_range_vals = input.year_range()
+        start_year, end_year = year_range_vals[0], year_range_vals[1]
+
+        year_frame = pd.DataFrame({
+            "year": list(range(start_year, end_year + 1))
+        })
+
+        yearly = (
+            df.groupby("year")["AgtId"]
+            .nunique()
+            .reset_index(name="agreements")
+        )
+        baseline = pax.copy()
+        if input.exclude_local_analysis():
+            baseline = baseline[baseline["agt_type"] != "Local"]
+
+        all_yearly = (
+            baseline[(baseline["year"] >= start_year) & (baseline["year"] <= end_year)]
+            .groupby("year")["AgtId"]
+            .nunique()
+            .reset_index(name="total")
+        )
+
+        merged = year_frame.merge(all_yearly, on="year", how="left")
+        merged = merged.merge(yearly, on="year", how="left")
+        merged = merged.fillna({"total": 0, "agreements": 0})
+        merged["total"] = merged["total"].astype(int)
+        merged["agreements"] = merged["agreements"].astype(int)
+
         if input.over_time_mode() == "Percentage":
-            # Calculate percentage of agreements signed that year (filtered / total for that year)
-            merged["percentage"] = merged["agreements"] / merged["total"] * 100
-            merged["percentage"] = merged["percentage"].fillna(0)
-            # Return only relevant columns for CSV export
+            merged["percentage"] = np.where(
+                merged["total"] > 0,
+                merged["agreements"] / merged["total"] * 100,
+                0
+            )
             return merged[["year", "agreements", "total", "percentage"]]
         else:
-            # Return only relevant columns for CSV export
             return merged[["year", "agreements", "total"]]
 
     @render.plot
@@ -375,44 +450,39 @@ def server(input, output, session):
     def grouped_over_time_data():
         df = filtered_data()
         group_col = "stage_label" if input.group_mode() == "Stage" else "agt_type"
-        
-        # Create complete year range from 1990 to 2024
-        all_years = list(range(1990, 2025))
-        
-        # Get all possible values for the grouping column
+
+        year_range_vals = input.year_range()
+        start_year, end_year = year_range_vals[0], year_range_vals[1]
+        all_years = list(range(start_year, end_year + 1))
+
         if input.group_mode() == "Stage":
             all_groups = stage_order
         else:
             all_groups = sorted(pax["agt_type"].dropna().unique().tolist())
-        
-        # Create a complete grid of year-group combinations
+            if input.exclude_local_analysis():
+                all_groups = [g for g in all_groups if g != "Local"]
+
         year_group_grid = []
         for year in all_years:
             for group in all_groups:
                 year_group_grid.append({"year": year, group_col: group})
-        
+
         complete_grid_df = pd.DataFrame(year_group_grid)
-        
-        # Get actual data
+
         grouped = df.groupby(["year", group_col])["AgtId"].nunique().reset_index(name="count")
-        
-        # Merge with complete grid to ensure all years and groups are represented
+
         result = complete_grid_df.merge(grouped, on=["year", group_col], how="left").fillna(0)
         result["count"] = result["count"].astype(int)
-        
-        # Create pivot table for export
+
         pivot_df = result.pivot(index="year", columns=group_col, values="count").fillna(0)
         pivot_df = pivot_df.astype(int)
-        
-        # Order stages if grouping by stage
+
         if input.group_mode() == "Stage":
             available_stages = [stage for stage in stage_order if stage in pivot_df.columns]
             other_stages = [stage for stage in pivot_df.columns if stage not in stage_order]
             pivot_df = pivot_df[available_stages + other_stages]
-        
-        # Reset index to make year a column for CSV export
-        return pivot_df.reset_index()
 
+        return pivot_df.reset_index()
     # Updated render plot function with fixed legend and positioning
     @render.plot
     def grouped_over_time():
@@ -479,10 +549,14 @@ def server(input, output, session):
         else:
             # Calculate percentages for both filtered and all data
             filtered_stage_data = df.groupby("stage_label")["AgtId"].nunique().reset_index(name="filtered_count")
-            all_stage_data = pax.groupby("stage_label")["AgtId"].nunique().reset_index(name="all_count")
-            
+            baseline = pax.copy()
+            if input.exclude_local_analysis():
+                baseline = baseline[baseline["agt_type"] != "Local"]
+
+            all_stage_data = baseline.groupby("stage_label")["AgtId"].nunique().reset_index(name="all_count")
+            total_all = baseline["AgtId"].nunique()                     
             total_filtered = df["AgtId"].nunique()
-            total_all = pax["AgtId"].nunique()
+          
             
             # Create a complete dataframe with all stages
             all_stages_df = pd.DataFrame({'stage_label': stage_order})
