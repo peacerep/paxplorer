@@ -267,52 +267,6 @@ layout = ui.nav_panel(
                 ui.hr(),
 
                 ui.div(
-                    ui.h2("Peace Processes with Selected Topics", style="margin-bottom: 15px;"),
-                    ui.p(
-                        "This shows the top peace processes containing agreements with the selected topics, by number of agreements. Use the stage toggle to break the chart down by stage of process.",
-                        class_="text-muted"
-                    ),
-                    ui.p(
-                        "Example use: are there processes where these topics are concentrated in particular stages, or appear repeatedly across a process?",
-                        style="font-style: italic; color: #555; font-size: 0.9em; margin-top: 8px;"
-                    ),
-                    ui.input_slider(
-                        "topics_top_processes",
-                        "Show Top N Peace Processes",
-                        min=5,
-                        max=50,
-                        value=20,
-                        step=1,
-                        width="50%"
-                    ),
-                    ui.input_checkbox("topics_show_stage_legend", "Show by Stage of Process", False),
-                    ui.div(
-                        ui.output_plot("topics_by_peace_process", height="650px"),
-                    ),
-                    ui.div(
-                        ui.div(
-                            ui.download_button("topics_export_pp_png", "Export PNG", class_="btn btn-outline-primary btn-sm"),
-                            ui.download_button("topics_export_pp_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
-                            style="display:flex; gap:10px; align-items:center;"
-                        ),
-                        ui.div(
-                            ui.input_text(
-                                "topics_custom_title_pp",
-                                None,
-                                placeholder="Enter custom chart title…",
-                                width="320px",
-                            ),
-                            style="margin-left:auto;"
-                        ),
-                        style="display:flex; align-items:center; gap:16px;",
-                        class_="mb-4"
-                    ),
-                    style="margin-bottom: 40px;"
-                ),
-
-                ui.hr(),
-
-                ui.div(
                     ui.h2("Signatories to Agreements with Selected Topics", style="margin-bottom: 15px;"),
                     ui.p(
                         "This shows the top party and third party signatories by number of agreements with the selected topics included. Use the slider to increase the number shown. ",
@@ -368,6 +322,52 @@ layout = ui.nav_panel(
                             style="display:flex; align-items:center; gap:16px;",
                             class_="mb-4"
                         ),
+                        class_="mb-4"
+                    ),
+                    style="margin-bottom: 40px;"
+                ),
+
+                ui.hr(),
+
+                ui.div(
+                    ui.h2("Peace Processes with Selected Topics", style="margin-bottom: 15px;"),
+                    ui.p(
+                        "This shows the top peace processes containing agreements with the selected topics, by number of agreements. Use the stage toggle to break the chart down by stage of process.",
+                        class_="text-muted"
+                    ),
+                    ui.p(
+                        "Example use: are there processes where these topics are concentrated in particular stages, or appear repeatedly across a process?",
+                        style="font-style: italic; color: #555; font-size: 0.9em; margin-top: 8px;"
+                    ),
+                    ui.input_slider(
+                        "topics_top_processes",
+                        "Show Top N Peace Processes",
+                        min=1,
+                        max=30,
+                        value=20,
+                        step=1,
+                        width="50%"
+                    ),
+                    ui.input_checkbox("topics_show_stage_legend", "Show by Stage of Process", False),
+                    ui.div(
+                        ui.output_plot("topics_by_peace_process", height="650px"),
+                    ),
+                    ui.div(
+                        ui.div(
+                            ui.download_button("topics_export_pp_png", "Export PNG", class_="btn btn-outline-primary btn-sm"),
+                            ui.download_button("topics_export_pp_csv", "Export CSV", class_="btn btn-outline-secondary btn-sm"),
+                            style="display:flex; gap:10px; align-items:center;"
+                        ),
+                        ui.div(
+                            ui.input_text(
+                                "topics_custom_title_pp",
+                                None,
+                                placeholder="Enter custom chart title…",
+                                width="320px",
+                            ),
+                            style="margin-left:auto;"
+                        ),
+                        style="display:flex; align-items:center; gap:16px;",
                         class_="mb-4"
                     ),
                     style="margin-bottom: 40px;"

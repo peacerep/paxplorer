@@ -894,6 +894,66 @@ def server(input, output, session):
     #     )
 
     @reactive.calc
+    def available_peace_processes_count():
+        """Count the actual number of peace processes with the selected topic"""
+        df = filtered_general_agreements().copy()
+        selected = input.selected_topics()
+
+        if df.empty or not selected or len(selected) != 1:
+            return 0
+
+        # Parse selected topic
+        parts = [p.strip() for p in selected[0].split(">")]
+        category = parts[0]
+        issue = parts[1] if len(parts) > 1 else None
+        sub = parts[2] if len(parts) > 2 else None
+
+        # Build topic matrix
+        tt = pax_topics.copy()
+        mask = (tt["category"] == category)
+        if issue:
+            mask &= (tt["issue_label"] == issue)
+        if sub:
+            mask &= (tt["subissue_label"] == sub)
+
+        topic_matrix = (
+            tt.loc[mask, ["AgtId", "value"]]
+            .drop_duplicates(subset=["AgtId"])
+            .copy()
+        )
+
+        # Merge and count
+        df = df.merge(topic_matrix, on="AgtId", how="left")
+        df["value"] = df["value"].fillna(0).astype(int)
+        df["value"] = np.where(df["value"] > 0, 1, 0)
+
+        # Count processes with at least one mention
+        count = len(df[df["value"] > 0]["PPName"].unique())
+        return max(count, 1)  # min of 1 to ensure slider is always valid
+
+    @reactive.effect
+    def _update_top_processes_slider():
+        """Dynamically update slider bounds based on available processes"""
+        available = available_peace_processes_count()
+        current_value = input.topics_top_processes()
+
+        # Set smart default: show all if ≤20, otherwise show top 20
+        smart_default = min(20, available)
+
+        # Ensure current value doesn't exceed available
+        new_value = min(current_value, available)
+        # If current value is 1 (the initial hardcoded default), use the smart default
+        if current_value == 1:
+            new_value = smart_default
+
+        with reactive.isolate():
+            ui.update_slider(
+                "topics_top_processes",
+                max=available,
+                value=new_value
+            )
+
+    @reactive.calc
     def topics_peace_process_data():
         """
         Returns PPName + total, mention, nomention, percent
@@ -1773,7 +1833,7 @@ def server(input, output, session):
                     color="#444", linewidth=1.2, alpha=0.7)
 
             # Dots by stage
-            colors = g["stage_label"].map(stage_color_map)
+            colors = g["stage_label"].map(stage_color_map).fillna("#cccccc").tolist()
             ax.scatter(
                 g[xcol],
                 [pp] * len(g),
@@ -1915,12 +1975,9 @@ def server(input, output, session):
         df["date"] = pd.to_datetime(df["Dat"], errors="coerce")
         df = df.dropna(subset=["date"])
 
-        # Order within process
-        df["order_in_pp"] = (
-            df.sort_values("date")
-            .groupby("PPName")
-            .cumcount() + 1
-        )
+        # Order within process: sort by date within each peace process, then reset index per group
+        df = df.sort_values(["PPName", "date"])
+        df["order_in_pp"] = df.groupby("PPName").cumcount() + 1
 
         # Preserve the Top-N ordering from bar-chart
         df["PPName"] = pd.Categorical(df["PPName"], categories=top_pps, ordered=True)
@@ -1951,17 +2008,18 @@ def server(input, output, session):
         for pp, g in df.groupby("PPName"):
             g = g.sort_values(xcol)
 
-            # Light grey connecting line
-            ax.plot(
-                g[xcol],
-                [pp] * len(g),
-                color="#dddddd",
-                linewidth=1,
-                zorder=1,
-            )
+            # Only show connecting line when viewing by date (not order)
+            if mode == "date":
+                ax.plot(
+                    g[xcol],
+                    [pp] * len(g),
+                    color="#dddddd",
+                    linewidth=1,
+                    zorder=1,
+                )
 
             # Red dots = mentions, Grey dots = no mention
-            colors = g["value"].map({1: "#df1f36", 0: "#cccccc"})
+            colors = g["value"].map({1: "#df1f36", 0: "#cccccc"}).fillna("#cccccc").tolist()
             ax.scatter(
                 g[xcol],
                 [pp] * len(g),
